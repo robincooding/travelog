@@ -1,0 +1,50 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Env / secrets
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# Build output
+dist/
+dist-ssr/
+build/
+*.local
+
+# Prisma
+backend/data/*.db
+backend/data/*.db-journal
+backend/generated/
+backend/prisma/generated/
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Cache
+.eslintcache
+*.tsbuildinfo
+*.timestamp-*-*.mjs
+
+# Test artifacts
+coverage/
+__screenshots__/
+/cypress/videos/
+/cypress/screenshots/

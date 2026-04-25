@@ -1,0 +1,22 @@
+version: "3.8"
+
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "${BACKEND_PORT:-3000}:3000"
+    volumes:
+      - ./backend/data:/app/data
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=file:/app/data/travelog.db
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "${FRONTEND_PORT:-8000}:80"
+    depends_on:
+      - backend
+    restart: unless-stopped

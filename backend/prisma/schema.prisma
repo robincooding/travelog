@@ -1,0 +1,59 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Travel {
+  id          Int       @id @default(autoincrement())
+  title       String
+  country     String
+  city        String
+  startDate   DateTime
+  endDate     DateTime
+  coverImage  String?
+  companions  String?
+  createdAt   DateTime  @default(now())
+
+  places      Place[]
+  orders      Order[]
+  aiEssay     AiEssay?
+}
+
+model Place {
+  id          Int       @id @default(autoincrement())
+  travelId    Int
+  name        String
+  lat         Float
+  lng         Float
+  memo        String?
+  visitedAt   DateTime
+  photos      String    @default("[]")  // JSON string
+  createdAt   DateTime  @default(now())
+
+  travel      Travel    @relation(fields: [travelId], references: [id], onDelete: Cascade)
+}
+
+model Order {
+  id          Int         @id @default(autoincrement())
+  travelId    Int
+  status      String      @default("pending")  // pending | processing | completed | cancelled
+  bookTitle   String
+  size        String      @default("A5")       // A5 | A4
+  pageCount   Int?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  travel      Travel      @relation(fields: [travelId], references: [id], onDelete: Cascade)
+}
+
+model AiEssay {
+  id            Int       @id @default(autoincrement())
+  travelId      Int       @unique
+  content       String
+  generatedAt   DateTime  @default(now())
+
+  travel        Travel    @relation(fields: [travelId], references: [id], onDelete: Cascade)
+}
