@@ -11,7 +11,7 @@ router.get("/", async (req, res) => {
     const orders = await prisma.order.findMany({
       orderBy: { createdAt: "desc" },
       include: {
-        travel: { select: { title: true, country: true, city: true } },
+        collection: { select: { title: true, theme: true } },
       },
     });
     res.json(orders);
@@ -25,7 +25,7 @@ router.get("/:id", async (req, res) => {
   try {
     const order = await prisma.order.findUnique({
       where: { id: Number(req.params.id) },
-      include: { travel: true },
+      include: { collection: true },
     });
     if (!order) return res.status(404).json({ error: "Not found" });
     res.json(order);
@@ -37,10 +37,10 @@ router.get("/:id", async (req, res) => {
 // 주문 생성
 router.post("/", async (req, res) => {
   try {
-    const { travelId, bookTitle, size, pageCount } = req.body;
+    const { collectionId, bookTitle, size, pageCount } = req.body;
     const order = await prisma.order.create({
       data: {
-        travelId: Number(travelId),
+        collectionId: Number(collectionId),
         bookTitle,
         size: size || "A5",
         pageCount: pageCount ? Number(pageCount) : null,

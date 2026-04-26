@@ -9,10 +9,10 @@ router.get("/:orderId", async (req, res) => {
     const order = await prisma.order.findUnique({
       where: { id: Number(req.params.orderId) },
       include: {
-        travel: {
+        collection: {
           include: {
             places: { orderBy: { visitedAt: "asc" } },
-            aiEssay: true,
+            profile: true,
           },
         },
       },
@@ -29,23 +29,34 @@ router.get("/:orderId", async (req, res) => {
         status: order.status,
         createdAt: order.createdAt,
       },
-      travelMeta: {
-        title: order.travel.title,
-        country: order.travel.country,
-        city: order.travel.city,
-        startDate: order.travel.startDate,
-        endDate: order.travel.endDate,
-        companions: order.travel.companions,
+      collection: {
+        title: order.collection.title,
+        theme: order.collection.theme,
+        description: order.collection.description,
       },
-      places: order.travel.places.map((p) => ({
+      places: order.collection.places.map((p) => ({
         name: p.name,
+        address: p.address,
+        city: p.city,
+        country: p.country,
         lat: p.lat,
         lng: p.lng,
-        memo: p.memo,
+        category: p.category,
+        curatorNote: p.curatorNote,
+        mood: p.mood,
         visitedAt: p.visitedAt,
+        travelContext: p.travelContext,
         photos: JSON.parse(p.photos || "[]"),
       })),
-      aiEssay: order.travel.aiEssay?.content || null,
+      aiProfile: order.collection.profile
+        ? {
+            themeType: order.collection.profile.themeType,
+            summary: order.collection.profile.summary,
+            recommendations: JSON.parse(
+              order.collection.profile.recommendations || "[]",
+            ),
+          }
+        : null,
     };
 
     res.setHeader(

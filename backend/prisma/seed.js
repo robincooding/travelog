@@ -4,118 +4,146 @@ async function main() {
   console.log("🌱 데이터 시딩 시작...");
 
   // 기존 데이터 초기화 (참조 무결성 준수하며 자식 -> 부모 순으로 삭제)
-  await prisma.aiEssay.deleteMany();
+  await prisma.collectionProfile.deleteMany();
   await prisma.order.deleteMany();
   await prisma.place.deleteMany();
-  await prisma.travel.deleteMany();
+  await prisma.collection.deleteMany();
 
-  // 여행 1 - 도쿄
-  const tokyo = await prisma.travel.create({
+  // 컬렉션 1 - 도쿄 카페 아카이브
+  const cafeCollection = await prisma.collection.create({
     data: {
-      title: "도쿄 벚꽃 여행",
-      country: "일본",
-      city: "도쿄",
-      startDate: new Date("2025-03-28"),
-      endDate: new Date("2025-04-02"),
-      coverImage: null,
-      companions: "친구",
+      title: "도쿄 카페 아카이브",
+      theme: "카페",
+      description: "도쿄 골목골목에서 발견한 작은 카페들의 기록",
       places: {
         create: [
           {
-            name: "신주쿠 교엔",
-            lat: 35.6851,
-            lng: 139.71,
-            memo: "벚꽃이 만개해서 너무 아름다웠다. 돗자리 펴고 한참 있었음.",
+            name: "蔦屋書店 代官山",
+            address: "도쿄 시부야구 다이칸야마",
+            city: "도쿄",
+            country: "일본",
+            lat: 35.6484,
+            lng: 139.7031,
+            category: "카페",
+            curatorNote: "책과 커피가 공존하는 공간. 오래 머물고 싶어지는 곳.",
+            mood: "여유",
             visitedAt: new Date("2025-03-29"),
-            photos: "[]",
+            travelContext: "2025 도쿄 봄 여행",
           },
           {
-            name: "아사쿠사 센소지",
-            lat: 35.7148,
-            lng: 139.7967,
-            memo: "나리타로 입국 후 첫 방문. 인파가 어마어마했지만 분위기 좋았다.",
-            visitedAt: new Date("2025-03-28"),
-            photos: "[]",
-          },
-          {
-            name: "시부야 스카이",
-            lat: 35.658,
-            lng: 139.7016,
-            memo: "야경이 압도적. 예약 필수.",
+            name: "About Life Coffee Brewers",
+            address: "도쿄 시부야구 도겐자카",
+            city: "도쿄",
+            country: "일본",
+            lat: 35.6572,
+            lng: 139.6988,
+            category: "카페",
+            curatorNote:
+              "스탠딩 바 형식의 작은 스페셜티 카페. 에스프레소가 진하다.",
+            mood: "설렘",
             visitedAt: new Date("2025-03-30"),
-            photos: "[]",
+            travelContext: "2025 도쿄 봄 여행",
+          },
+          {
+            name: "Fuglen Tokyo",
+            address: "도쿄 시부야구 도미가야",
+            city: "도쿄",
+            country: "일본",
+            lat: 35.6707,
+            lng: 139.6891,
+            category: "카페",
+            curatorNote: "노르웨이 감성의 빈티지 카페. 낮에는 커피, 밤에는 바.",
+            mood: "감동",
+            visitedAt: new Date("2025-04-01"),
+            travelContext: "2025 도쿄 봄 여행",
           },
         ],
       },
-      aiEssay: {
+      orders: {
         create: {
-          content: `3월 말, 벚꽃이 절정을 향해 달려가던 도쿄에서 나는 처음으로 봄의 의미를 몸으로 이해했다. 아사쿠사의 인파 속에서 느꼈던 설렘, 신주쿠 교엔의 돗자리 위에서 올려다본 분홍빛 하늘, 그리고 시부야 스카이에서 내려다본 도시의 야경. 이 여행은 단순한 관광이 아니라, 일상의 속도를 잠시 내려놓고 지금 이 순간에 집중하는 연습이었다. 봄은 짧기 때문에 아름답다는 말을 이제는 안다.`,
-          generatedAt: new Date(),
+          bookTitle: "나의 도쿄 카페 아카이브 2025",
+          size: "A5",
+          pageCount: 36,
+          status: "completed",
         },
       },
     },
   });
 
-  // 여행2
-  const paris = await prisma.travel.create({
+  // 컬렉션 2 - 유럽 미술관 순례
+  const artCollection = await prisma.collection.create({
     data: {
-      title: "첫 유럽 여행에서의 파리",
-      country: "프랑스",
-      city: "파리",
-      startDate: new Date("2024-08-10"),
-      endDate: new Date("2024-08-15"),
-      coverImage: null,
-      companions: "혼자",
+      title: "유럽 미술관 순례",
+      theme: "전시·미술관",
+      description: "파리와 암스테르담에서 다닌 미술관들의 아카이브",
       places: {
         create: [
           {
-            name: "에펠탑",
-            lat: 48.8584,
-            lng: 2.2945,
-            memo: "생각보다 훨씬 크다. 밤에 반짝이는 조명 쇼가 압권이었다.",
-            visitedAt: new Date("2024-08-10"),
-            photos: "[]",
-          },
-          {
             name: "루브르 박물관",
+            address: "파리 1구 리볼리가",
+            city: "파리",
+            country: "프랑스",
             lat: 48.8606,
             lng: 2.3376,
-            memo: "모나리자는 생각보다 작았지만, 나머지 컬렉션이 압도적. 하루로는 턱없이 부족하다.",
+            category: "미술관",
+            curatorNote:
+              "모나리자는 생각보다 작지만, 나머지 컬렉션이 압도적. 하루로는 부족하다.",
+            mood: "감동",
             visitedAt: new Date("2024-08-11"),
-            photos: "[]",
+            travelContext: "2024 파리 여름 여행",
           },
           {
-            name: "몽마르트 언덕",
-            lat: 48.8867,
-            lng: 2.3431,
-            memo: "사크레쾨르 성당 앞에서 도시 전체를 내려다봤다. 버스킹 소리와 함께 한참 앉아있었다.",
+            name: "오르세 미술관",
+            address: "파리 7구 레지옹 도뇌르 광장",
+            city: "파리",
+            country: "프랑스",
+            lat: 48.86,
+            lng: 2.3266,
+            category: "미술관",
+            curatorNote:
+              "인상파 컬렉션이 압도적. 모네와 르누아르를 실제로 보는 감동.",
+            mood: "설렘",
             visitedAt: new Date("2024-08-12"),
-            photos: "[]",
+            travelContext: "2024 파리 여름 여행",
+          },
+          {
+            name: "반 고흐 미술관",
+            address: "암스테르담 뮤지엄 플레인 6",
+            city: "암스테르담",
+            country: "네덜란드",
+            lat: 52.3584,
+            lng: 4.8811,
+            category: "미술관",
+            curatorNote:
+              "고흐의 생애를 시간순으로 따라가는 구성이 인상적. 편지 전시가 특히 좋았다.",
+            mood: "감동",
+            visitedAt: new Date("2024-08-15"),
+            travelContext: "2024 암스테르담 여행",
           },
         ],
+      },
+      orders: {
+        create: {
+          bookTitle: "유럽 미술관 순례기",
+          size: "A4",
+          status: "pending",
+        },
       },
     },
   });
 
-  // 주문 — 도쿄 여행 책으로 만들기
-  await prisma.order.create({
+  // AI 프로필 — 카페 컬렉션
+  await prisma.collectionProfile.create({
     data: {
-      travelId: tokyo.id,
-      status: "completed",
-      bookTitle: "벚꽃 도쿄, 2025봄",
-      size: "A5",
-      pageCount: 48,
-    },
-  });
-
-  // 주문 — 파리 여행 pending
-  await prisma.order.create({
-    data: {
-      travelId: paris.id,
-      status: "pending",
-      bookTitle: "파리의 여름, 2024",
-      size: "A4",
-      pageCount: null,
+      collectionId: cafeCollection.id,
+      themeType: "감성 탐험형",
+      summary:
+        "유명 체인보다 골목의 작은 스페셜티 카페를 선호하는 취향. 공간의 분위기와 스토리를 중시함.",
+      recommendations: JSON.stringify([
+        "京都 % Arabica",
+        "Onibus Coffee 나카메구로",
+        "Bear Pond Espresso",
+      ]),
     },
   });
 

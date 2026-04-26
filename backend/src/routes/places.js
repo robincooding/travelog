@@ -2,13 +2,12 @@ const express = require("express");
 const router = express.Router();
 const prisma = require("../lib/prisma");
 const { error } = require("node:console");
-const { route } = require("./travels");
 
-// 특정 여행의 장소 목록
-router.get("/travel/:travelId", async (req, res) => {
+// 특정 컬렉션의 장소 목록
+router.get("/collection/:collectionId", async (req, res) => {
   try {
     const places = await prisma.place.findMany({
-      where: { travelId: Number(req.params.travelId) },
+      where: { collectionId: Number(req.params.collectionId) },
       orderBy: { visitedAt: "asc" },
     });
     res.json(places);
@@ -17,18 +16,39 @@ router.get("/travel/:travelId", async (req, res) => {
   }
 });
 
-// 장소 생성
+// 장소 추가
 router.post("/", async (req, res) => {
   try {
-    const { travelId, name, lat, lng, memo, visitedAt } = req.body;
+    const {
+      collectionId,
+      name,
+      googlePlaceId,
+      address,
+      city,
+      country,
+      lat,
+      lng,
+      category,
+      curatorNote,
+      mood,
+      visitedAt,
+      travelContext,
+    } = req.body;
     const place = await prisma.place.create({
       data: {
-        travelId: Number(travelId),
+        collectionId: Number(collectionId),
         name,
-        lat,
-        lng,
-        memo,
+        googlePlaceId,
+        address,
+        city,
+        country,
+        lat: Number(lat),
+        lng: Number(lng),
+        category,
+        curatorNote,
+        mood,
         visitedAt: new Date(visitedAt),
+        travelContext,
         photos: "[]",
       },
     });
@@ -41,10 +61,34 @@ router.post("/", async (req, res) => {
 // 장소 수정
 router.put("/:id", async (req, res) => {
   try {
-    const { name, lat, lng, memo, visitedAt } = req.body;
+    const {
+      name,
+      address,
+      city,
+      country,
+      lat,
+      lng,
+      category,
+      curatorNote,
+      mood,
+      visitedAt,
+      travelContext,
+    } = req.body;
     const place = await prisma.place.update({
       where: { id: Number(req.params.id) },
-      data: { name, lat, lng, memo, visitedAt: new Date(visitedAt) },
+      data: {
+        name,
+        address,
+        city,
+        country,
+        lat: Number(lat),
+        lng: Number(lng),
+        category,
+        curatorNote,
+        mood,
+        visitedAt: new Date(visitedAt),
+        travelContext,
+      },
     });
     res.json(place);
   } catch (e) {
