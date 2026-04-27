@@ -1,9 +1,9 @@
 <template>
-  <div ref="mapEl" class="w-full h-72 rounded-xl border border-gray-200 z-0" />
+  <div ref="mapEl" class="map-view" />
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted } from 'vue'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
@@ -25,13 +25,24 @@ onMounted(() => {
   props.places.forEach((place, i) => {
     L.marker([place.lat, place.lng])
       .addTo(map)
-      .bindPopup(`<b>${i + 1}. ${place.name}</b><br>${place.memo || ''}`)
+      .bindPopup(`<b>${i + 1}. ${place.name}</b><br>${place.curatorNote || ''}`)
   })
 
   if (props.places.length > 1) {
     const coords = props.places.map(p => [p.lat, p.lng])
-    L.polyline(coords, { color: '#374151', weight: 1.5, dashArray: '4 6' }).addTo(map)
+    L.polyline(coords, { color: '#1a1a1a', weight: 1.5, dashArray: '4 6' }).addTo(map)
     map.fitBounds(coords, { padding: [30, 30] })
   }
 })
 </script>
+
+<style scoped>
+.map-view {
+  width: 100%;
+  height: 320px;
+  border-radius: 12px;
+  border: 1px solid var(--hairline);
+  overflow: hidden;
+  z-index: 0;
+}
+</style>

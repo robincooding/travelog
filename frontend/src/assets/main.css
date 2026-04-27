@@ -1,1 +1,336 @@
+/* ── 전역 폰트 (반드시 tailwind 보다 먼저) ── */
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400;1,500&display=swap');
+
 @import "tailwindcss";
+
+:root {
+  --font-serif: 'Georgia', 'Noto Serif KR', 'Apple SD Gothic Neo', serif;
+  --font-sans: 'Pretendard', 'Helvetica Neue', 'Apple SD Gothic Neo', system-ui, sans-serif;
+
+  --ink: #111;
+  --text: #1a1a1a;
+  --muted: #555;
+  --soft: #777;
+  --faint: #aaa;
+  --hairline: rgba(0, 0, 0, 0.08);
+  --hairline-strong: rgba(0, 0, 0, 0.18);
+  --bg: #fafaf8;
+  --card: #ffffff;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-serif);
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  word-break: keep-all;
+}
+
+a { color: inherit; }
+
+/* ── 공통 버튼 ── */
+.btn-primary {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  background: var(--ink);
+  color: #fff;
+  padding: 12px 28px;
+  border-radius: 100px;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  transition: background 0.2s, transform 0.15s;
+  display: inline-block;
+}
+.btn-primary:hover {
+  background: #333;
+  transform: translateY(-1px);
+}
+
+.btn-ghost {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  background: transparent;
+  color: var(--muted);
+  padding: 12px 28px;
+  border-radius: 100px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  text-decoration: none;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  transition: border-color 0.2s, color 0.2s;
+  display: inline-block;
+}
+.btn-ghost:hover {
+  color: var(--ink);
+  border-color: rgba(0, 0, 0, 0.35);
+}
+
+.btn-new {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  background: var(--ink);
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 100px;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  transition: background 0.2s;
+  white-space: nowrap;
+  display: inline-block;
+}
+.btn-new:hover { background: #333; }
+
+/* ── 공통 섹션 레이블 ── */
+.section-label {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--faint);
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+/* ── 보조 버튼 (윤곽선) ── */
+.btn-secondary {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  background: transparent;
+  color: var(--muted);
+  padding: 9px 18px;
+  border-radius: 100px;
+  border: 1px solid var(--hairline-strong);
+  text-decoration: none;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+  display: inline-block;
+  white-space: nowrap;
+}
+.btn-secondary:hover {
+  color: var(--ink);
+  border-color: var(--ink);
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.btn-tiny {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  background: transparent;
+  color: var(--soft);
+  padding: 5px 12px;
+  border-radius: 100px;
+  border: 1px solid var(--hairline);
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+  white-space: nowrap;
+}
+.btn-tiny:hover {
+  color: var(--ink);
+  border-color: var(--hairline-strong);
+}
+
+.btn-primary[disabled],
+.btn-primary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ── 공통 폼 ── */
+.form-stack { display: flex; flex-direction: column; gap: 1.25rem; }
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+@media (max-width: 480px) {
+  .form-row { grid-template-columns: 1fr; }
+}
+.form-label {
+  display: block;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--soft);
+  margin-bottom: 0.5rem;
+}
+.form-input,
+.form-textarea {
+  width: 100%;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--card);
+  border: 1px solid var(--hairline);
+  border-radius: 10px;
+  padding: 10px 14px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.form-input:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: var(--ink);
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.04);
+}
+.form-input::placeholder,
+.form-textarea::placeholder {
+  color: var(--faint);
+}
+.form-textarea {
+  resize: vertical;
+  min-height: 72px;
+  line-height: 1.6;
+}
+
+/* ── 토글 가능한 chip (테마 / 무드) ── */
+.chip-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.chip {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  padding: 6px 14px;
+  border-radius: 100px;
+  border: 1px solid var(--hairline);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.chip:hover {
+  border-color: var(--hairline-strong);
+  color: var(--ink);
+}
+.chip.is-active {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
+}
+
+/* ── 정적 라벨 (읽기 전용 chip) ── */
+.tag {
+  display: inline-block;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  padding: 3px 10px;
+  border-radius: 100px;
+  border: 1px solid var(--hairline);
+  color: var(--soft);
+  background: transparent;
+}
+
+/* ── 상태 뱃지 (주문 상태 등) ── */
+.status-badge {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  padding: 4px 12px;
+  border-radius: 100px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.status-badge--pending    { background: #fdf6e3; color: #b08200; }
+.status-badge--processing { background: #eef4ff; color: #2f5fc4; }
+.status-badge--completed  { background: #ecf6ee; color: #2d8a4f; }
+.status-badge--cancelled  { background: #f1f1ee; color: #999; }
+
+/* ── 페이지 공통 레이아웃 ── */
+.page {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 6rem;
+  font-family: var(--font-serif);
+}
+.page--narrow { max-width: 640px; }
+
+.page-back {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: var(--soft);
+  text-decoration: none;
+  letter-spacing: 0.02em;
+  display: inline-block;
+  margin-bottom: 1rem;
+  transition: color 0.2s;
+}
+.page-back:hover { color: var(--ink); }
+
+.page-eyebrow {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--faint);
+  margin-bottom: 0.5rem;
+}
+
+.page-title {
+  font-family: var(--font-serif);
+  font-size: clamp(1.6rem, 3vw, 2rem);
+  font-weight: 500;
+  color: var(--ink);
+  letter-spacing: -0.005em;
+  line-height: 1.3;
+}
+
+.section-heading {
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: var(--ink);
+  letter-spacing: -0.005em;
+}
+
+/* ── empty / loading ── */
+.state-block {
+  padding: 5rem 0;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--soft);
+  font-family: var(--font-sans);
+  font-size: 13px;
+}
+.state-icon {
+  font-size: 1.75rem;
+  color: #d4d4d0;
+  margin-bottom: 0.25rem;
+}
+
+/* ── word mark ── */
+.wordmark {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 20px;
+  letter-spacing: 0.2em;
+  color: #1B2A4A;
+  text-decoration: none;
+  font-weight: 500;
+}

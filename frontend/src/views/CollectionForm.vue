@@ -1,45 +1,62 @@
 <template>
-  <div class="max-w-lg">
-    <h1 class="text-2xl font-semibold text-gray-800 mb-6">
-      {{ isEdit ? '컬렉션 수정' : '새 컬렉션' }}
-    </h1>
+  <div class="page page--narrow">
+    <RouterLink :to="isEdit ? `/collections/${route.params.id}` : '/collections'" class="page-back">
+      ← 돌아가기
+    </RouterLink>
 
-    <form @submit.prevent="handleSubmit" class="space-y-4">
+    <p class="page-eyebrow">{{ isEdit ? 'Edit collection' : 'New collection' }}</p>
+    <h1 class="page-title">{{ isEdit ? '컬렉션 수정' : '새 컬렉션' }}</h1>
+
+    <form @submit.prevent="handleSubmit" class="form-stack form-block">
       <div>
-        <label class="block text-sm text-gray-600 mb-1">컬렉션 이름</label>
-        <input v-model="form.title" type="text" required placeholder="도쿄 카페 아카이브"
-          class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300" />
+        <label class="form-label">컬렉션 이름</label>
+        <input
+          v-model="form.title"
+          type="text"
+          required
+          placeholder="도쿄 카페 아카이브"
+          class="form-input"
+        />
       </div>
 
       <div>
-        <label class="block text-sm text-gray-600 mb-1">테마</label>
-        <div class="flex flex-wrap gap-2 mb-2">
+        <label class="form-label">테마</label>
+        <div class="chip-group" style="margin-bottom: 0.75rem;">
           <button
-            v-for="t in themeOptions" :key="t" type="button"
+            v-for="t in themeOptions"
+            :key="t"
+            type="button"
+            class="chip"
+            :class="{ 'is-active': form.theme === t }"
             @click="form.theme = t"
-            :class="form.theme === t
-              ? 'bg-gray-800 text-white'
-              : 'border border-gray-200 text-gray-600 hover:bg-gray-50'"
-            class="text-xs px-3 py-1.5 rounded-full transition-colors"
           >{{ t }}</button>
         </div>
-        <input v-model="form.theme" type="text" placeholder="직접 입력"
-          class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300" />
+        <input
+          v-model="form.theme"
+          type="text"
+          placeholder="직접 입력"
+          class="form-input"
+        />
       </div>
 
       <div>
-        <label class="block text-sm text-gray-600 mb-1">설명 (선택)</label>
-        <textarea v-model="form.description" rows="3" placeholder="이 컬렉션에 대한 간단한 소개"
-          class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300" />
+        <label class="form-label">설명 (선택)</label>
+        <textarea
+          v-model="form.description"
+          rows="3"
+          placeholder="이 컬렉션에 대한 간단한 소개"
+          class="form-textarea"
+        />
       </div>
 
-      <div class="flex gap-3 pt-2">
-        <button type="submit"
-          class="bg-gray-800 text-white text-sm px-5 py-2 rounded-lg hover:bg-gray-700 transition-colors">
+      <div class="form-actions">
+        <button type="submit" class="btn-primary">
           {{ isEdit ? '수정하기' : '만들기' }}
         </button>
-        <RouterLink :to="isEdit ? `/collections/${route.params.id}` : '/collections'"
-          class="text-sm px-5 py-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors">
+        <RouterLink
+          :to="isEdit ? `/collections/${route.params.id}` : '/collections'"
+          class="btn-secondary"
+        >
           취소
         </RouterLink>
       </div>
@@ -78,3 +95,14 @@ async function handleSubmit() {
   }
 }
 </script>
+
+<style scoped>
+.form-block {
+  margin-top: 2.5rem;
+}
+.form-actions {
+  display: flex;
+  gap: 12px;
+  padding-top: 0.5rem;
+}
+</style>

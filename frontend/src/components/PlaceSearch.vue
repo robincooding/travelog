@@ -1,20 +1,22 @@
 <template>
-  <div class="relative">
-    <label class="text-xs text-gray-500 mb-1 block">장소 검색</label>
+  <div class="place-search">
+    <label class="form-label">장소 검색</label>
     <input
       v-model="query"
       type="text"
-      placeholder="장소명 검색 (예: Tim Hortons, 루브르 박물관)"
+      placeholder="장소명으로 검색 (예: Tim Hortons, 루브르 박물관)"
+      class="form-input"
       @input="handleInput"
-      class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300"
     />
-    <ul v-if="suggestions.length"
-      class="absolute z-10 w-full bg-white border border-gray-200 rounded-lg mt-1 shadow-lg max-h-48 overflow-y-auto">
-      <li v-for="s in suggestions" :key="s.place_id"
+    <ul v-if="suggestions.length" class="suggestion-list">
+      <li
+        v-for="s in suggestions"
+        :key="s.place_id"
+        class="suggestion-item"
         @click="handleSelect(s)"
-        class="px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer border-b border-gray-50 last:border-0">
-        <p class="font-medium">{{ s.structured_formatting?.main_text || s.description }}</p>
-        <p class="text-xs text-gray-400">{{ s.structured_formatting?.secondary_text || '' }}</p>
+      >
+        <p class="suggestion-main">{{ s.structured_formatting?.main_text || s.description }}</p>
+        <p class="suggestion-sub">{{ s.structured_formatting?.secondary_text || '' }}</p>
       </li>
     </ul>
   </div>
@@ -30,7 +32,6 @@ let debounceTimer = null
 let autocompleteService = null
 let placesService = null
 
-// Google Maps API 로드
 function loadGoogleMaps() {
   return new Promise((resolve) => {
     if (window.google) return resolve()
@@ -105,3 +106,42 @@ function getCategory(types) {
   return '장소'
 }
 </script>
+
+<style scoped>
+.place-search { position: relative; }
+
+.suggestion-list {
+  position: absolute;
+  z-index: 10;
+  width: 100%;
+  margin-top: 4px;
+  background: var(--card);
+  border: 1px solid var(--hairline);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  max-height: 240px;
+  overflow-y: auto;
+  list-style: none;
+}
+.suggestion-item {
+  padding: 10px 14px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--hairline);
+  transition: background 0.15s;
+}
+.suggestion-item:last-child { border-bottom: none; }
+.suggestion-item:hover { background: rgba(0, 0, 0, 0.02); }
+
+.suggestion-main {
+  font-family: var(--font-sans);
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--ink);
+  margin-bottom: 2px;
+}
+.suggestion-sub {
+  font-family: var(--font-sans);
+  font-size: 11.5px;
+  color: var(--soft);
+}
+</style>

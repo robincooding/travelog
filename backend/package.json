@@ -1,7 +1,7 @@
 {
-  "name": "backend",
+  "name": "loci-backend",
   "version": "1.0.0",
-  "description": "",
+  "description": "Loci — places archiving service backend",
   "main": "index.js",
   "scripts": {
     "dev": "nodemon src/index.js",

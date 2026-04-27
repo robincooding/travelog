@@ -1,43 +1,51 @@
 <template>
-  <div>
-    <h1 class="text-2xl font-semibold text-gray-800 mb-6">책 주문</h1>
-
-    <div v-if="loading" class="text-center py-20 text-gray-400">불러오는 중...</div>
-    <div v-else-if="orders.length === 0" class="text-center py-20 text-gray-400">
-      아직 주문이 없어요.
+  <div class="page">
+    <div class="page-head">
+      <p class="page-eyebrow">Orders</p>
+      <h1 class="page-title">책 주문</h1>
     </div>
 
-    <div v-else class="space-y-4">
-      <div v-for="order in orders" :key="order.id"
-        class="bg-white rounded-xl border border-gray-200 p-5">
-        <div class="flex items-start justify-between">
-          <div>
-            <p class="font-medium text-gray-800">{{ order.bookTitle }}</p>
-            <p class="text-sm text-gray-500 mt-0.5">
-              {{ order.travel?.title }} · {{ order.size }}
-              <span v-if="order.pageCount"> · {{ order.pageCount }}p</span>
-            </p>
-            <p class="text-xs text-gray-400 mt-1">{{ formatDate(order.createdAt) }}</p>
-          </div>
-          <div class="flex flex-col items-end gap-2">
-            <span :class="statusClass(order.status)"
-              class="text-xs px-2 py-1 rounded-full font-medium">
-              {{ statusLabel(order.status) }}
-            </span>
-            <div class="flex gap-1">
-              <button v-for="s in nextStatuses(order.status)" :key="s"
-                @click="handleStatusChange(order.id, s)"
-                class="text-xs px-2 py-1 border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50">
-                → {{ statusLabel(s) }}
-              </button>
-              <button @click="handleExport(order.id)"
-                class="text-xs px-2 py-1 border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-50">
-                📦 익스포트
-              </button>
-            </div>
+    <div v-if="loading" class="state-block">
+      <div class="loading-dots"><span></span><span></span><span></span></div>
+    </div>
+
+    <div v-else-if="orders.length === 0" class="state-block">
+      <span class="state-icon">◻</span>
+      <p>아직 주문이 없어요.</p>
+      <p class="state-hint">컬렉션 상세 페이지에서 책으로 주문할 수 있어요.</p>
+    </div>
+
+    <div v-else class="orders-list">
+      <article v-for="order in orders" :key="order.id" class="order-card">
+        <div class="order-main">
+          <h2 class="order-title">{{ order.bookTitle }}</h2>
+          <p class="order-sub">
+            <span v-if="order.collection?.title">{{ order.collection.title }}</span>
+            <span v-if="order.collection?.title" class="order-sep">·</span>
+            <span>{{ order.size }}</span>
+            <template v-if="order.pageCount">
+              <span class="order-sep">·</span>
+              <span>{{ order.pageCount }}p</span>
+            </template>
+          </p>
+          <p class="order-date">{{ formatDate(order.createdAt) }}</p>
+        </div>
+
+        <div class="order-side">
+          <span :class="['status-badge', `status-badge--${order.status}`]">
+            {{ statusLabel(order.status) }}
+          </span>
+          <div class="order-actions">
+            <button
+              v-for="s in nextStatuses(order.status)"
+              :key="s"
+              class="btn-tiny"
+              @click="handleStatusChange(order.id, s)"
+            >→ {{ statusLabel(s) }}</button>
+            <button class="btn-tiny" @click="handleExport(order.id)">내보내기</button>
           </div>
         </div>
-      </div>
+      </article>
     </div>
   </div>
 </template>
@@ -61,15 +69,6 @@ function formatDate(d) {
 
 function statusLabel(s) {
   return { pending: '대기', processing: '처리중', completed: '완료', cancelled: '취소' }[s] || s
-}
-
-function statusClass(s) {
-  return {
-    pending: 'bg-yellow-50 text-yellow-600',
-    processing: 'bg-blue-50 text-blue-600',
-    completed: 'bg-green-50 text-green-600',
-    cancelled: 'bg-gray-100 text-gray-400'
-  }[s]
 }
 
 function nextStatuses(current) {
@@ -98,3 +97,112 @@ async function handleExport(orderId) {
   URL.revokeObjectURL(url)
 }
 </script>
+
+<style scoped>
+.page-head {
+  margin-bottom: 2.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.orders-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.order-card {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  background: var(--card);
+  border: 1px solid var(--hairline);
+  border-radius: 14px;
+  padding: 1.4rem 1.6rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.order-card:hover {
+  border-color: var(--hairline-strong);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.04);
+}
+
+.order-main {
+  flex: 1;
+  min-width: 0;
+}
+.order-title {
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: var(--ink);
+  margin-bottom: 0.4rem;
+  letter-spacing: -0.005em;
+}
+.order-sub {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--muted);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 0.35rem;
+}
+.order-sep { color: var(--faint); }
+.order-date {
+  font-family: var(--font-sans);
+  font-size: 11.5px;
+  color: var(--faint);
+  letter-spacing: 0.02em;
+}
+
+.order-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.6rem;
+  flex-shrink: 0;
+}
+.order-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.state-hint {
+  font-size: 12px;
+  color: var(--faint);
+}
+
+.loading-dots {
+  display: flex;
+  gap: 6px;
+}
+.loading-dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ccc;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+.loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+.loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes pulse {
+  0%, 100% { opacity: 0.3; transform: scale(0.8); }
+  50%      { opacity: 1;   transform: scale(1); }
+}
+
+@media (max-width: 600px) {
+  .order-card {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .order-side {
+    align-items: flex-start;
+    width: 100%;
+  }
+  .order-actions { justify-content: flex-start; }
+}
+</style>
