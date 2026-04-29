@@ -1,0 +1,15 @@
+node_modules
+dist
+dist-ssr
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+# Vite 는 VITE_* 변수를 빌드 타임에 JS 에 inline 하므로 frontend/.env 가 build stage 에 필요.
+# (어차피 빌드 결과물이 클라이언트로 그대로 전송되는 공개값이므로 보안 위험 없음)
+.env.local
+.env.*.local
+.git
+.gitignore
+.dockerignore
+Dockerfile
+README.md
