@@ -43,6 +43,8 @@ router.get("/:orderId", async (req, res) => {
         lng: p.lng,
         category: p.category,
         curatorNote: p.curatorNote,
+        highlight: p.highlight,
+        feeling: p.feeling,
         mood: p.mood,
         visitedAt: p.visitedAt,
         travelContext: p.travelContext,

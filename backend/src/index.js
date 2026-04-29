@@ -9,6 +9,7 @@ const placesRouter = require("./routes/places");
 const ordersRouter = require("./routes/orders");
 const aiRouter = require("./routes/ai");
 const exportRouter = require("./routes/export");
+const uploadRouter = require("./routes/upload");
 
 const app = express();
 const PORT = Number(process.env.BACKEND_PORT) || 3000;
@@ -23,6 +24,7 @@ app.use("/api/places", placesRouter);
 app.use("/api/orders", ordersRouter);
 app.use("/api/ai", aiRouter);
 app.use("/api/export", exportRouter);
+app.use("/api/upload", uploadRouter);
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);

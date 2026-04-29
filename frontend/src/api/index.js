@@ -17,6 +17,17 @@ export const createPlace = (data) => api.post("/places", data);
 export const updatePlace = (id, data) => api.put(`/places/${id}`, data);
 export const deletePlace = (id) => api.delete(`/places/${id}`);
 
+// 이미지 업로드
+export const uploadImage = (file) => {
+  const formData = new FormData();
+  formData.append("image", file);
+  return api.post("/upload", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+};
+
+export const deleteImage = (key) => api.delete("/upload", { data: { key } });
+
 // 주문
 export const getOrders = () => api.get("/orders");
 export const createOrder = (data) => api.post("/orders", data);

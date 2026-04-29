@@ -35,6 +35,7 @@ router.post("/", async (req, res) => {
       mood,
       visitedAt,
       travelContext,
+      photos,
     } = req.body;
     const place = await prisma.place.create({
       data: {
@@ -53,7 +54,7 @@ router.post("/", async (req, res) => {
         mood,
         visitedAt: new Date(visitedAt),
         travelContext,
-        photos: "[]",
+        photos: photos ?? "[]",
       },
     });
     res.status(201).json(place);
@@ -79,6 +80,7 @@ router.put("/:id", async (req, res) => {
       mood,
       visitedAt,
       travelContext,
+      photos,
     } = req.body;
     const place = await prisma.place.update({
       where: { id: Number(req.params.id) },
@@ -96,6 +98,8 @@ router.put("/:id", async (req, res) => {
         mood,
         visitedAt: new Date(visitedAt),
         travelContext,
+        // photos 가 명시적으로 전달된 경우에만 갱신 (의도치 않게 빈 배열로 덮이는 것 방지)
+        ...(photos !== undefined ? { photos } : {}),
       },
     });
     res.json(place);

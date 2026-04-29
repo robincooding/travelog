@@ -1,5 +1,31 @@
 <template>
-  <div class="place-card">
+  <div
+    class="place-card"
+    role="button"
+    tabindex="0"
+    @click="$emit('view', place)"
+    @keydown.enter="$emit('view', place)"
+    @keydown.space.prevent="$emit('view', place)"
+  >
+    <!-- 액션 버튼 (수정 / 삭제) — 카드 클릭과 분리되도록 stopPropagation -->
+    <div class="place-actions" @click.stop>
+      <button
+        class="place-action-btn"
+        aria-label="수정"
+        @click.stop="$emit('edit', place)"
+      >✎</button>
+      <button
+        class="place-action-btn place-action-btn--delete"
+        aria-label="삭제"
+        @click.stop="$emit('delete', place.id)"
+      >✕</button>
+    </div>
+
+    <!-- 대표 사진 -->
+    <div v-if="firstPhoto" class="place-photo">
+      <img :src="firstPhoto" :alt="place.name" class="place-photo-img" />
+    </div>
+
     <div class="place-main">
       <div class="place-head">
         <h3 class="place-name">{{ place.name }}</h3>
@@ -20,42 +46,111 @@
         <span v-if="place.visitedAt" class="meta-text">{{ formatDate(place.visitedAt) }}</span>
       </div>
     </div>
-
-    <button
-      class="place-delete"
-      aria-label="삭제"
-      @click="$emit('delete', place.id)"
-    >✕</button>
   </div>
 </template>
 
 <script setup>
+import { computed } from 'vue'
 
 const props = defineProps({ place: Object })
-defineEmits(['delete'])
+defineEmits(['delete', 'edit', 'view'])
 
 function formatDate(d) {
   if (!d) return ''
   return new Date(d).toLocaleDateString('ko-KR', { year: 'numeric', month: 'short', day: 'numeric' })
 }
+
+const firstPhoto = computed(() => {
+  try {
+    const photos = JSON.parse(props.place.photos || '[]')
+    return photos[0]?.url || null
+  } catch {
+    return null
+  }
+})
+
 </script>
 
 <style scoped>
 .place-card {
+  position: relative;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
+  flex-direction: column;
   gap: 1rem;
   background: var(--card);
   border: 1px solid var(--hairline);
   border-radius: 12px;
   padding: 1.1rem 1.25rem;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+.place-card:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+/* 우상단 액션 — 사진이 있어도 그 위에 떠 있도록 absolute */
+.place-actions {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  gap: 4px;
+  z-index: 1;
+}
+.place-action-btn {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(4px);
+  border: 1px solid var(--hairline);
+  border-radius: 100px;
+  font-size: 12px;
+  color: var(--soft);
+  cursor: pointer;
+  line-height: 1;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.place-action-btn:hover {
+  color: var(--ink);
+  border-color: var(--hairline-strong);
+  background: #fff;
+}
+.place-action-btn--delete:hover {
+  color: #e57373;
+  border-color: #e57373;
 }
 .place-card:hover {
   border-color: var(--hairline-strong);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  transform: translateY(-1px);
 }
+
+.place-photo {
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  max-height: 360px;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+  background: var(--hairline);
+}
+.place-photo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.4s ease;
+}
+.place-card:hover .place-photo-img {
+  transform: scale(1.02);
+}
+
 .place-main {
   flex: 1;
   min-width: 0;
@@ -123,16 +218,4 @@ function formatDate(d) {
   color: var(--faint);
   letter-spacing: 0.02em;
 }
-.place-delete {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 13px;
-  color: #d4d4d0;
-  padding: 2px 6px;
-  line-height: 1;
-  transition: color 0.2s;
-  flex-shrink: 0;
-}
-.place-delete:hover { color: #e57373; }
 </style>
