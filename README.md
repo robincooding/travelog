@@ -208,7 +208,7 @@ Collection ─┬─< Place (N)        — 큐레이션 콘텐츠
 
 | AI 도구 | 활용 내용 |
 |---|---|
-| **Claude Code** | **[도메인 모델링 및 백엔드 구축]**<br>• Collection, Place, Order 등 핵심 도메인 설계 및 전체 API 라우터 구현<br>• DB와 JSON 간의 시드 데이터 동기화 파이프라인(seed.js) 자동화<br>**[프론트엔드 및 AI 로직 최적화]**<br>• Vue 3 고급 컴포넌트(Teleport, Scroll-lock) 및 Tailwind v4 디자인 시스템 구축<br>• Gemini 프롬프트 엔지니어링을 통한 맞춤형 장소 추천 및 데이터 포맷팅<br>**[인프라 설정 및 트러블슈팅]**<br>• Docker Multi-stage 빌드 및 Nginx 배포 환경(SPA fallback 포함) 구성<br>• Prisma client, native module 도커 호환성 및 Google Maps API 등 기술 부채 해결 |
+| **Claude Code** | **[기획 과정 및 콘텐츠 구성]**<br>• 서비스 기획 과정에서 기획 초안을 기반으로 기능과 콘텐츠 구성을 정리 및 체계화<br>**[도메인 모델링 및 백엔드 구축]**<br>• Collection, Place, Order 등 핵심 도메인 설계 및 전체 API 라우터 구현<br>• DB와 JSON 간의 시드 데이터 동기화 파이프라인(seed.js) 자동화<br>**[프론트엔드 및 AI 로직 최적화]**<br>• Vue 3 고급 컴포넌트(Teleport, Scroll-lock) 및 Tailwind v4 디자인 시스템 구축<br>• Gemini 프롬프트 엔지니어링을 통한 맞춤형 장소 추천 및 데이터 포맷팅<br>**[인프라 설정 및 트러블슈팅]**<br>• Docker Multi-stage 빌드 및 Nginx 배포 환경(SPA fallback 포함) 구성<br>• Prisma client, native module 도커 호환성 및 Google Maps API 등 기술 부채 해결 |
 | **ChatGPT** | 콘텐츠 구성에 대한 브레인스토밍 |
 | **Gemini** (런타임) | 서비스 자체의 AI 분석 기능 — 컬렉션 성향 / 추천 장소 생성 |
 
