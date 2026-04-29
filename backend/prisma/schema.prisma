@@ -31,7 +31,9 @@ model Place {
   lat            Float
   lng            Float
   category       String?
-  curatorNote    String?
+  curatorNote    String?   // 왜 좋았는지
+  highlight      String?   // 가장 기억에 남는 것
+  feeling        String?   // 그 순간의 감정
   mood           String?
   visitedAt      DateTime
   travelContext  String?

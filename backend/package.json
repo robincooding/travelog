@@ -26,5 +26,13 @@
     "@types/node": "^25.6.0",
     "nodemon": "^3.1.14",
     "prisma": "^7.8.0"
+  },
+  "nodemonConfig": {
+    "watch": [
+      "src",
+      "prisma/schema.prisma",
+      "node_modules/.prisma/client/index.js"
+    ],
+    "ext": "js,json,prisma"
   }
 }

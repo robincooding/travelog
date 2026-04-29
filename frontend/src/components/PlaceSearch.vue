@@ -33,13 +33,24 @@ let autocompleteService = null
 let placesService = null
 
 function loadGoogleMaps() {
-  return new Promise((resolve) => {
-    if (window.google) return resolve()
-    const script = document.createElement('script')
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env.VITE_GOOGLE_PLACES_API_KEY}&libraries=places`
-    script.onload = resolve
-    document.head.appendChild(script)
-  })
+  if (window.google?.maps?.importLibrary) return Promise.resolve()
+  if (!window.__lociMapsLoader) {
+    window.__lociMapsLoader = new Promise((resolve) => {
+      // With loading=async, only the `callback` param reliably signals
+      // that google.maps.importLibrary is ready. script.onload is too early.
+      window.__lociMapsInit = resolve
+      const script = document.createElement('script')
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env.VITE_GOOGLE_PLACES_API_KEY}&libraries=maps,marker,places&v=beta&callback=__lociMapsInit&loading=async`
+      document.head.appendChild(script)
+    })
+  }
+  return window.__lociMapsLoader
+}
+
+async function ensurePlacesLib() {
+  await loadGoogleMaps()
+  // Ensure 'places' library is materialized even if not preloaded via libraries= param
+  await window.google.maps.importLibrary('places')
 }
 
 async function handleInput() {
@@ -49,15 +60,21 @@ async function handleInput() {
     return
   }
   debounceTimer = setTimeout(async () => {
-    await loadGoogleMaps()
+    await ensurePlacesLib()
     if (!autocompleteService) {
       autocompleteService = new window.google.maps.places.AutocompleteService()
     }
     autocompleteService.getPlacePredictions(
       { input: query.value },
       (predictions, status) => {
-        if (status === window.google.maps.places.PlacesServiceStatus.OK) {
+        const STATUS = window.google.maps.places.PlacesServiceStatus
+        if (status === STATUS.OK) {
           suggestions.value = predictions || []
+        } else if (status === STATUS.ZERO_RESULTS) {
+          suggestions.value = []
+        } else {
+          console.error('[PlaceSearch] getPlacePredictions failed:', status)
+          suggestions.value = []
         }
       }
     )
@@ -65,7 +82,7 @@ async function handleInput() {
 }
 
 async function handleSelect(suggestion) {
-  await loadGoogleMaps()
+  await ensurePlacesLib()
   if (!placesService) {
     const div = document.createElement('div')
     placesService = new window.google.maps.places.PlacesService(div)
@@ -73,25 +90,28 @@ async function handleSelect(suggestion) {
   placesService.getDetails(
     { placeId: suggestion.place_id, fields: ['name', 'geometry', 'formatted_address', 'address_components', 'types'] },
     (place, status) => {
-      if (status === window.google.maps.places.PlacesServiceStatus.OK) {
-        const addressComponents = place.address_components || []
-        const city = addressComponents.find(c => c.types.includes('locality'))?.long_name || ''
-        const country = addressComponents.find(c => c.types.includes('country'))?.long_name || ''
-        const category = getCategory(place.types || [])
-
-        emit('select', {
-          name: place.name,
-          googlePlaceId: suggestion.place_id,
-          address: place.formatted_address,
-          city,
-          country,
-          lat: place.geometry.location.lat(),
-          lng: place.geometry.location.lng(),
-          category,
-        })
-        query.value = place.name
-        suggestions.value = []
+      const STATUS = window.google.maps.places.PlacesServiceStatus
+      if (status !== STATUS.OK) {
+        console.error('[PlaceSearch] getDetails failed:', status)
+        return
       }
+      const addressComponents = place.address_components || []
+      const city = addressComponents.find(c => c.types.includes('locality'))?.long_name || ''
+      const country = addressComponents.find(c => c.types.includes('country'))?.long_name || ''
+      const category = getCategory(place.types || [])
+
+      emit('select', {
+        name: place.name,
+        googlePlaceId: suggestion.place_id,
+        address: place.formatted_address,
+        city,
+        country,
+        lat: place.geometry.location.lat(),
+        lng: place.geometry.location.lng(),
+        category,
+      })
+      query.value = place.name
+      suggestions.value = []
     }
   )
 }

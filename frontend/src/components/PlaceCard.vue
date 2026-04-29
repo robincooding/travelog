@@ -3,7 +3,6 @@
     <div class="place-main">
       <div class="place-head">
         <h3 class="place-name">{{ place.name }}</h3>
-        <span v-if="place.mood" class="place-mood" :title="place.mood">{{ moodEmoji }}</span>
       </div>
 
       <p v-if="place.address" class="place-loc">
@@ -12,6 +11,8 @@
       </p>
 
       <p v-if="place.curatorNote" class="place-note">"{{ place.curatorNote }}"</p>
+      <p v-if="place.highlight" class="place-highlight">◈ {{ place.highlight }}</p>
+      <p v-if="place.feeling" class="place-feeling">{{ place.feeling }}</p>
 
       <div class="place-meta">
         <span v-if="place.category" class="tag">{{ place.category }}</span>
@@ -29,14 +30,9 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
 
 const props = defineProps({ place: Object })
 defineEmits(['delete'])
-
-const moodEmoji = computed(() => ({
-  '설렘': '✨', '감동': '🥹', '여유': '☕', '아쉬움': '🌧️'
-})[props.place.mood] || '')
 
 function formatDate(d) {
   if (!d) return ''
@@ -78,7 +74,6 @@ function formatDate(d) {
   letter-spacing: -0.005em;
   line-height: 1.4;
 }
-.place-mood { font-size: 13px; }
 .place-loc {
   font-family: var(--font-sans);
   font-size: 12px;
@@ -102,6 +97,20 @@ function formatDate(d) {
   padding-left: 0.65rem;
   border-left: 2px solid var(--hairline);
 }
+.place-highlight {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--soft);
+  line-height: 1.6;
+  margin-bottom: 0.5rem;
+}
+.place-feeling {
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  color: var(--faint);
+  font-style: italic;
+  margin-bottom: 0.5rem;
+}
 .place-meta {
   display: flex;
   flex-wrap: wrap;
@@ -110,7 +119,7 @@ function formatDate(d) {
 }
 .meta-text {
   font-family: var(--font-sans);
-  font-size: 11px;
+  font-size: 12px;
   color: var(--faint);
   letter-spacing: 0.02em;
 }

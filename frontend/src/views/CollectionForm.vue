@@ -14,7 +14,7 @@
           v-model="form.title"
           type="text"
           required
-          placeholder="도쿄 카페 아카이브"
+          placeholder="예: 도쿄 카페 아카이브"
           class="form-input"
         />
       </div>

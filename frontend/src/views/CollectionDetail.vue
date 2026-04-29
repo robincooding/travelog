@@ -42,28 +42,24 @@
             <input v-model="placeForm.visitedAt" type="date" class="form-input" />
           </div>
           <div>
-            <label class="form-label">방문 맥락</label>
-            <input v-model="placeForm.travelContext" type="text" placeholder="2025 도쿄 봄 여행" class="form-input" />
+            <label class="form-label">여행 태그</label>
+            <input v-model="placeForm.travelContext" type="text" placeholder="예: 2025 도쿄 봄 여행" class="form-input" />
           </div>
         </div>
 
         <div>
-          <label class="form-label">큐레이션 메모</label>
-          <textarea v-model="placeForm.curatorNote" placeholder="왜 좋았는지 한 줄로" rows="2" class="form-textarea" />
+          <label class="form-label">왜 좋았나요?</label>
+          <textarea v-model="placeForm.curatorNote" placeholder="이 장소가 특별했던 이유" rows="2" class="form-textarea" />
         </div>
 
         <div>
-          <label class="form-label">감정 태그</label>
-          <div class="chip-group">
-            <button
-              v-for="m in moods"
-              :key="m.value"
-              type="button"
-              class="chip"
-              :class="{ 'is-active': placeForm.mood === m.value }"
-              @click="placeForm.mood = m.value"
-            >{{ m.label }}</button>
-          </div>
+          <label class="form-label">가장 기억에 남는 것</label>
+          <textarea v-model="placeForm.highlight" placeholder="눈을 감으면 떠오르는 한 장면" rows="2" class="form-textarea" />
+        </div>
+
+        <div>
+          <label class="form-label">그 순간의 감정</label>
+          <input v-model="placeForm.feeling" type="text" placeholder="설레는, 따뜻한, 조용한, 벅찬..." class="form-input" />
         </div>
 
         <div class="place-form-actions">
@@ -112,17 +108,11 @@ const router = useRouter()
 const collection = ref(null)
 const showPlaceForm = ref(false)
 
-const moods = [
-  { value: '설렘', label: '✨ 설렘' },
-  { value: '감동', label: '🥹 감동' },
-  { value: '여유', label: '☕ 여유' },
-  { value: '아쉬움', label: '🌧️ 아쉬움' },
-]
-
 const emptyForm = () => ({
   name: '', googlePlaceId: '', address: '',
   city: '', country: '', lat: null, lng: null,
-  category: '', curatorNote: '', mood: '', visitedAt: '', travelContext: ''
+  category: '', curatorNote: '', highlight: '',
+  feeling: '', mood: '', visitedAt: '', travelContext: ''
 })
 
 const placeForm = ref(emptyForm())

@@ -46,7 +46,7 @@ const isLanding = computed(() => route.path === '/')
 .app-nav-inner {
   max-width: 920px;
   margin: 0 auto;
-  padding: 0.9rem 1.5rem;
+  padding: 0.65rem 1.5rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -62,7 +62,7 @@ const isLanding = computed(() => route.path === '/')
 .app-nav-logo-link:hover { opacity: 0.7; }
 .app-nav-logo {
   display: inline-block;
-  height: 22px;
+  height: 28px;
 }
 .app-nav-links {
   display: flex;
@@ -70,7 +70,7 @@ const isLanding = computed(() => route.path === '/')
 }
 .app-nav-link {
   font-family: var(--font-sans);
-  font-size: 13px;
+  font-size: 14px;
   color: var(--soft);
   text-decoration: none;
   letter-spacing: 0.01em;
