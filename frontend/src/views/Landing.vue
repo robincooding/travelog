@@ -7,7 +7,9 @@
         <RouterLink to="/" class="nav-logo-link" aria-label="Loci 홈">
           <LociLogo class="nav-logo" />
         </RouterLink>
-        <RouterLink to="/collections" class="nav-link">아카이브 보기 →</RouterLink>
+        <RouterLink :to="isAuthenticated ? '/collections' : '/login'" class="nav-link">
+          {{ isAuthenticated ? '아카이브 보기 →' : '로그인 →' }}
+        </RouterLink>
       </div>
     </nav>
 
@@ -57,12 +59,16 @@
 
         <div class="hero-actions">
           <div class="hero-action">
-            <RouterLink to="/collections/new" class="btn-primary">+ 컬렉션 만들기</RouterLink>
-            <p class="hero-action-help">테마를 정하고 좋았던 장소를 담아요</p>
+            <RouterLink :to="primaryCtaPath" class="btn-primary">
+              {{ primaryCtaLabel }}
+            </RouterLink>
+            <p class="hero-action-help">{{ primaryCtaHelp }}</p>
           </div>
           <div class="hero-action">
-            <RouterLink to="/collections" class="btn-ghost">아카이브 보기</RouterLink>
-            <p class="hero-action-help">이미 만든 컬렉션 둘러보기</p>
+            <RouterLink :to="secondaryCtaPath" class="btn-ghost">
+              {{ secondaryCtaLabel }}
+            </RouterLink>
+            <p class="hero-action-help">{{ secondaryCtaHelp }}</p>
           </div>
         </div>
       </div>
@@ -122,8 +128,10 @@
     <section id="cta" class="cta-section">
       <div class="cta-inner">
         <p class="cta-quote">"기억은 흐려져도,<br>기록은 남습니다"</p>
-        <p class="cta-sub">첫 컬렉션을 만들어보세요.</p>
-        <RouterLink to="/collections/new" class="btn-primary cta-btn">컬렉션 만들기</RouterLink>
+        <p class="cta-sub">{{ isAuthenticated ? '컬렉션을 이어가 보세요.' : '계정을 만들고 첫 컬렉션을 시작해요.' }}</p>
+        <RouterLink :to="primaryCtaPath" class="btn-primary cta-btn">
+          {{ isAuthenticated ? '컬렉션 만들기' : '시작하기' }}
+        </RouterLink>
       </div>
     </section>
 
@@ -137,8 +145,24 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import LociLogo from '../components/LociLogo.vue'
+import { useAuth } from '../stores/auth'
+
+const { isAuthenticated } = useAuth()
+
+// 인증 상태에 따라 CTA 의 문구 / 목적지를 명확히 분기
+// — 비로그인 사용자가 "+ 컬렉션 만들기" 눌러서 갑자기 로그인 화면 만나는 흐름 방지
+const primaryCtaPath = computed(() => isAuthenticated.value ? '/collections/new' : '/register')
+const primaryCtaLabel = computed(() => isAuthenticated.value ? '+ 컬렉션 만들기' : '계정 만들기')
+const primaryCtaHelp = computed(() =>
+  isAuthenticated.value ? '테마를 정하고 좋았던 장소를 담아요' : '이메일로 가입하고 컬렉션을 시작해요'
+)
+const secondaryCtaPath = computed(() => isAuthenticated.value ? '/collections' : '/login')
+const secondaryCtaLabel = computed(() => isAuthenticated.value ? '아카이브 보기' : '로그인')
+const secondaryCtaHelp = computed(() =>
+  isAuthenticated.value ? '이미 만든 컬렉션 둘러보기' : '이미 계정이 있다면'
+)
 
 const typedEl = ref(null)
 const doneTyping = ref(false)
@@ -679,29 +703,6 @@ onUnmounted(() => {
   font-size: 14.5px;
   color: var(--muted);
   line-height: 1.7;
-}
-
-.features-aside {
-  margin-top: 2rem;
-  padding-top: 1.5rem;
-  border-top: 1px dashed rgba(0, 0, 0, 0.1);
-  font-family: var(--font-sans);
-  font-size: 12.5px;
-  color: var(--soft);
-  text-align: center;
-  letter-spacing: 0.01em;
-}
-.aside-tag {
-  display: inline-block;
-  font-size: 10px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--faint);
-  border: 1px solid var(--hairline);
-  padding: 2px 8px;
-  border-radius: 100px;
-  margin-right: 8px;
-  vertical-align: 1px;
 }
 
 /* CTA — footer 와 합쳐 한 viewport 내에 들어가도록 footer 높이만큼 빼서 계산 */
