@@ -10,7 +10,6 @@ router.get("/", async (req, res) => {
       orderBy: { createdAt: "desc" },
       include: {
         _count: { select: { places: true } },
-        orders: { select: { status: true } },
       },
     });
     res.json(collections);
@@ -26,7 +25,6 @@ router.get("/:id", async (req, res) => {
       where: { id: Number(req.params.id) },
       include: {
         places: { orderBy: { visitedAt: "asc" } },
-        orders: true,
         profile: true,
       },
     });

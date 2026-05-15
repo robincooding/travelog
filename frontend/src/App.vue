@@ -7,7 +7,6 @@
         </RouterLink>
         <div class="app-nav-links">
           <RouterLink to="/collections" class="app-nav-link" active-class="is-active">아카이브</RouterLink>
-          <RouterLink to="/orders" class="app-nav-link" active-class="is-active">주문</RouterLink>
         </div>
       </div>
     </nav>

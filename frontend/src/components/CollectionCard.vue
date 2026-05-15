@@ -14,9 +14,6 @@
           <span class="meta-dot">◎</span>
           {{ collection._count?.places || 0 }}개 장소
         </span>
-        <span v-if="collection.orders?.length" class="meta-orders">
-          · {{ collection.orders.length }}건 주문
-        </span>
       </div>
       <span class="card-arrow" aria-hidden="true">→</span>
     </div>
@@ -119,7 +116,6 @@ defineEmits(['delete'])
   margin-right: 4px;
   color: var(--faint);
 }
-.meta-orders { color: var(--faint); }
 
 .card-arrow {
   font-family: var(--font-sans);

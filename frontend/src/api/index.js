@@ -28,16 +28,6 @@ export const uploadImage = (file) => {
 
 export const deleteImage = (key) => api.delete("/upload", { data: { key } });
 
-// 주문
-export const getOrders = () => api.get("/orders");
-export const createOrder = (data) => api.post("/orders", data);
-export const updateOrderStatus = (id, status) =>
-  api.patch(`/orders/${id}/status`, { status });
-export const deleteOrder = (id) => api.delete(`/orders/${id}`);
-
 // AI 프로필 생성
 export const generateProfile = (collectionId) =>
   api.post(`/ai/profile/${collectionId}`);
-
-// Exporting orders
-export const exportOrder = (orderId) => api.get(`/export/${orderId}`);

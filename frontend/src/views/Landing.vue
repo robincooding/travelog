@@ -115,10 +115,6 @@
           </div>
         </div>
 
-        <p class="features-aside">
-          <span class="aside-tag">Optional</span>
-          원하면 컬렉션을 종이책으로 인쇄해 받아볼 수도 있어요.
-        </p>
       </div>
     </section>
 

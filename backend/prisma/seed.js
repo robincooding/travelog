@@ -16,7 +16,6 @@ async function main() {
 
   // 깨끗한 상태에서 시작 (FK 순서 고려)
   await prisma.collectionProfile.deleteMany();
-  await prisma.order.deleteMany();
   await prisma.place.deleteMany();
   await prisma.collection.deleteMany();
 

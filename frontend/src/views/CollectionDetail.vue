@@ -16,7 +16,6 @@
 
       <div class="header-actions">
         <RouterLink :to="`/collections/${collection.id}/edit`" class="btn-secondary">수정</RouterLink>
-        <button class="btn-primary" @click="handleOrder">책 주문</button>
       </div>
     </header>
 
@@ -131,8 +130,8 @@
 
 <script setup>
 import { ref, computed, onMounted, nextTick } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { getCollection, createPlace, updatePlace, deletePlace, createOrder } from '../api/index.js'
+import { useRoute } from 'vue-router'
+import { getCollection, createPlace, updatePlace, deletePlace } from '../api/index.js'
 import { uploadImage, deleteImage } from '../api/index.js'
 import MapView from '../components/MapView.vue'
 import PlaceCard from '../components/PlaceCard.vue'
@@ -141,7 +140,6 @@ import AiProfile from '../components/AiProfile.vue'
 import PlaceModal from '../components/PlaceModal.vue'
 
 const route = useRoute()
-const router = useRouter()
 const collection = ref(null)
 const showPlaceForm = ref(false)
 const photoUploading = ref(false)
@@ -280,13 +278,6 @@ async function handleDeletePlace(id) {
   if (!confirm('이 장소를 삭제할까요?')) return
   await deletePlace(id)
   collection.value.places = collection.value.places.filter(p => p.id !== id)
-}
-
-async function handleOrder() {
-  const bookTitle = prompt('책 제목을 입력해주세요', `${collection.value.title} 컬렉션북`)
-  if (!bookTitle) return
-  await createOrder({ collectionId: collection.value.id, bookTitle, size: 'A5' })
-  router.push('/orders')
 }
 
 async function handlePhotoUpload(e) {
