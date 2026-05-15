@@ -1,7 +1,9 @@
 const express = require("express");
-const { error } = require("node:console");
 const router = express.Router();
 const prisma = require("../lib/prisma");
+const requireAuth = require("../middleware/requireAuth");
+
+router.use(requireAuth);
 
 // 컬렉션 별 프로필 생성
 router.post("/profile/:collectionId", async (req, res) => {
@@ -10,8 +12,10 @@ router.post("/profile/:collectionId", async (req, res) => {
       where: { id: Number(req.params.collectionId) },
       include: { places: true },
     });
-    if (!collection)
-      return res.status(404).json({ error: "Collection not found" });
+    // 없거나 다른 사람 컬렉션이면 모두 404 (소유권 정보 노출 방지)
+    if (!collection || collection.userId !== req.user.id) {
+      return res.status(404).json({ error: "컬렉션을 찾을 수 없어요" });
+    }
 
     const placeList = collection.places
       .map(

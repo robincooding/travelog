@@ -1,12 +1,16 @@
 const fs = require("node:fs");
 const path = require("node:path");
+const bcrypt = require("bcrypt");
 const prisma = require("../src/lib/prisma");
 
 /**
  * seed-data.json 의 내용을 그대로 DB 에 적재합니다.
- * - collections / places / profiles 모두 한번에 wipe & reseed
- * - photos 필드는 이미 JSON 문자열 형태로 저장돼 있어서 그대로 사용
- *   (URL 은 공개 S3 객체라 누구든 읽을 수 있음)
+ *
+ * - 데모 사용자 1명 생성 (이메일/비번은 seed-data.json 의 demoUser 참고)
+ * - 모든 시드 컬렉션을 그 데모 사용자 소유로 귀속
+ * - 매 실행마다 user / collection / place / profile 을 전부 wipe & reseed
+ *
+ * 주의: 시드 비밀번호는 학습 / 데모 용도로만 사용. 운영 환경에선 시드 자체를 돌리지 마세요.
  */
 async function main() {
   console.log("🌱 데이터 시딩 시작...");
@@ -18,10 +22,23 @@ async function main() {
   await prisma.collectionProfile.deleteMany();
   await prisma.place.deleteMany();
   await prisma.collection.deleteMany();
+  await prisma.user.deleteMany();
+
+  // 데모 사용자 — 평문 비번은 절대 저장 X, bcrypt hash 만 저장
+  const passwordHash = await bcrypt.hash(seed.demoUser.password, 10);
+  const demoUser = await prisma.user.create({
+    data: {
+      email: seed.demoUser.email,
+      displayName: seed.demoUser.displayName ?? null,
+      passwordHash,
+    },
+  });
+  console.log(`  ✓ 데모 사용자 — ${demoUser.email}`);
 
   for (const c of seed.collections) {
     const collection = await prisma.collection.create({
       data: {
+        userId: demoUser.id,
         title: c.title,
         theme: c.theme,
         description: c.description ?? null,
@@ -64,7 +81,11 @@ async function main() {
     );
   }
 
-  console.log("✅ 시딩 완료");
+  console.log("\n✅ 시딩 완료");
+  console.log("");
+  console.log("   데모 로그인 정보:");
+  console.log(`     이메일:   ${seed.demoUser.email}`);
+  console.log(`     비밀번호: ${seed.demoUser.password}`);
 }
 
 main()

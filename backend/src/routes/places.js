@@ -1,11 +1,45 @@
 const express = require("express");
 const router = express.Router();
 const prisma = require("../lib/prisma");
-const { error } = require("node:console");
+const requireAuth = require("../middleware/requireAuth");
+
+router.use(requireAuth);
+
+/**
+ * Place 의 소유권 체크 — 부모 Collection 의 userId 가 요청자와 같은지.
+ * - place 가 없거나 다른 사람 컬렉션 소속이면 404 응답 후 null 반환
+ */
+async function findOwnedPlaceOrRespond(req, res, placeId) {
+  const place = await prisma.place.findUnique({
+    where: { id: Number(placeId) },
+    include: { collection: { select: { userId: true } } },
+  });
+  if (!place || place.collection.userId !== req.user.id) {
+    res.status(404).json({ error: "장소를 찾을 수 없어요" });
+    return null;
+  }
+  return place;
+}
+
+/**
+ * 컬렉션 소유권 체크 — POST 시 collectionId 가 본인 것인지.
+ */
+async function assertCollectionOwnership(req, res, collectionId) {
+  const c = await prisma.collection.findUnique({
+    where: { id: Number(collectionId) },
+    select: { userId: true },
+  });
+  if (!c || c.userId !== req.user.id) {
+    res.status(404).json({ error: "컬렉션을 찾을 수 없어요" });
+    return false;
+  }
+  return true;
+}
 
 // 특정 컬렉션의 장소 목록
 router.get("/collection/:collectionId", async (req, res) => {
   try {
+    if (!(await assertCollectionOwnership(req, res, req.params.collectionId))) return;
     const places = await prisma.place.findMany({
       where: { collectionId: Number(req.params.collectionId) },
       orderBy: { visitedAt: "asc" },
@@ -37,6 +71,9 @@ router.post("/", async (req, res) => {
       travelContext,
       photos,
     } = req.body;
+
+    if (!(await assertCollectionOwnership(req, res, collectionId))) return;
+
     const place = await prisma.place.create({
       data: {
         collectionId: Number(collectionId),
@@ -66,6 +103,9 @@ router.post("/", async (req, res) => {
 // 장소 수정
 router.put("/:id", async (req, res) => {
   try {
+    const owned = await findOwnedPlaceOrRespond(req, res, req.params.id);
+    if (!owned) return;
+
     const {
       name,
       address,
@@ -83,7 +123,7 @@ router.put("/:id", async (req, res) => {
       photos,
     } = req.body;
     const place = await prisma.place.update({
-      where: { id: Number(req.params.id) },
+      where: { id: owned.id },
       data: {
         name,
         address,
@@ -98,7 +138,6 @@ router.put("/:id", async (req, res) => {
         mood,
         visitedAt: new Date(visitedAt),
         travelContext,
-        // photos 가 명시적으로 전달된 경우에만 갱신 (의도치 않게 빈 배열로 덮이는 것 방지)
         ...(photos !== undefined ? { photos } : {}),
       },
     });
@@ -111,7 +150,9 @@ router.put("/:id", async (req, res) => {
 // 장소 삭제
 router.delete("/:id", async (req, res) => {
   try {
-    await prisma.place.delete({ where: { id: Number(req.params.id) } });
+    const owned = await findOwnedPlaceOrRespond(req, res, req.params.id);
+    if (!owned) return;
+    await prisma.place.delete({ where: { id: owned.id } });
     res.status(204).send();
   } catch (e) {
     res.status(500).json({ error: e.message });

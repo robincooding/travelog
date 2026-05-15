@@ -8,7 +8,9 @@ const {
 } = require("@aws-sdk/client-s3");
 const path = require("path");
 const crypto = require("crypto");
-const { error } = require("console");
+const requireAuth = require("../middleware/requireAuth");
+
+router.use(requireAuth);
 
 const s3 = new S3Client({
   region: process.env.AWS_REGION,

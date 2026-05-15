@@ -1,4 +1,9 @@
 {
+  "demoUser": {
+    "email": "demo@loci.dev",
+    "password": "loci-demo-2026",
+    "displayName": "데모"
+  },
   "collections": [
     {
       "title": "도쿄 카페 아카이브",
