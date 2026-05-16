@@ -12,10 +12,28 @@ const {
   resetTokenExpiresAt,
 } = require("../lib/auth");
 const requireAuth = require("../middleware/requireAuth");
+const { validate, z } = require("../lib/validate");
 
-// 이메일 형식 — 너무 엄격하지 않은 실용형
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PASSWORD_MIN = 8;
+// ── 입력 스키마 ────────────────────────────────
+const RegisterSchema = z.object({
+  email: z.string().email("유효한 이메일을 입력해주세요"),
+  password: z.string().min(8, "비밀번호는 8자 이상이어야 해요"),
+  displayName: z.string().trim().max(40).optional(),
+});
+
+const LoginSchema = z.object({
+  email: z.string().email("유효한 이메일을 입력해주세요"),
+  password: z.string().min(1, "비밀번호를 입력해주세요"),
+});
+
+const ForgotPasswordSchema = z.object({
+  email: z.string().email("유효한 이메일을 입력해주세요"),
+});
+
+const ResetPasswordSchema = z.object({
+  token: z.string().min(1, "유효한 토큰이 아니에요"),
+  newPassword: z.string().min(8, "비밀번호는 8자 이상이어야 해요"),
+});
 
 // 응답에 절대 보내지 않을 필드 (특히 passwordHash)
 function publicUser(user) {
@@ -29,19 +47,9 @@ function publicUser(user) {
 
 // ── 회원가입 ──────────────────────────────────
 // POST /api/auth/register  { email, password, displayName? }
-router.post("/register", async (req, res) => {
+router.post("/register", validate(RegisterSchema), async (req, res) => {
   try {
-    const { email, password, displayName } = req.body || {};
-
-    // 입력 검증
-    if (!email || !EMAIL_RE.test(email)) {
-      return res.status(400).json({ error: "유효한 이메일을 입력해주세요" });
-    }
-    if (!password || password.length < PASSWORD_MIN) {
-      return res
-        .status(400)
-        .json({ error: `비밀번호는 ${PASSWORD_MIN}자 이상이어야 해요` });
-    }
+    const { email, password, displayName } = req.body;
 
     // 이메일 중복 체크 (race condition 은 Prisma unique constraint 가 잡아줌)
     const existing = await prisma.user.findUnique({ where: { email } });
@@ -54,7 +62,7 @@ router.post("/register", async (req, res) => {
       data: {
         email,
         passwordHash,
-        displayName: displayName?.trim() || null,
+        displayName: displayName || null,
       },
     });
 
@@ -73,14 +81,9 @@ router.post("/register", async (req, res) => {
 
 // ── 로그인 ────────────────────────────────────
 // POST /api/auth/login  { email, password }
-router.post("/login", async (req, res) => {
+router.post("/login", validate(LoginSchema), async (req, res) => {
   try {
-    const { email, password } = req.body || {};
-    if (!email || !password) {
-      return res
-        .status(400)
-        .json({ error: "이메일과 비밀번호를 입력해주세요" });
-    }
+    const { email, password } = req.body;
 
     const user = await prisma.user.findUnique({ where: { email } });
     // 보안: 사용자가 없을 때와 비밀번호가 틀릴 때를 똑같이 응답
@@ -110,12 +113,9 @@ router.post("/logout", (req, res) => {
 // ── 비밀번호 재설정 요청 ───────────────────────
 // POST /api/auth/forgot-password  { email }
 // 이메일 존재 여부를 응답으로 누출하지 않음 — 존재 / 미존재 모두 같은 응답.
-router.post("/forgot-password", async (req, res) => {
+router.post("/forgot-password", validate(ForgotPasswordSchema), async (req, res) => {
   try {
-    const { email } = req.body || {};
-    if (!email || !EMAIL_RE.test(email)) {
-      return res.status(400).json({ error: "유효한 이메일을 입력해주세요" });
-    }
+    const { email } = req.body;
 
     const user = await prisma.user.findUnique({ where: { email } });
     if (user) {
@@ -151,17 +151,9 @@ router.post("/forgot-password", async (req, res) => {
 
 // ── 비밀번호 재설정 실행 ───────────────────────
 // POST /api/auth/reset-password  { token, newPassword }
-router.post("/reset-password", async (req, res) => {
+router.post("/reset-password", validate(ResetPasswordSchema), async (req, res) => {
   try {
-    const { token, newPassword } = req.body || {};
-    if (!token || typeof token !== "string") {
-      return res.status(400).json({ error: "유효한 토큰이 아니에요" });
-    }
-    if (!newPassword || newPassword.length < PASSWORD_MIN) {
-      return res
-        .status(400)
-        .json({ error: `비밀번호는 ${PASSWORD_MIN}자 이상이어야 해요` });
-    }
+    const { token, newPassword } = req.body;
 
     const record = await prisma.passwordResetToken.findUnique({
       where: { tokenHash: hashResetToken(token) },

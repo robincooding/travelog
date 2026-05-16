@@ -2,6 +2,17 @@ const express = require("express");
 const router = express.Router();
 const prisma = require("../lib/prisma");
 const requireAuth = require("../middleware/requireAuth");
+const { validate, z } = require("../lib/validate");
+
+// ── 입력 스키마 ────────────────────────────────
+const CollectionCreateSchema = z.object({
+  title: z.string().trim().min(1, "제목은 필수예요").max(100),
+  theme: z.string().trim().min(1, "테마는 필수예요").max(50),
+  description: z.string().trim().max(500).nullish(),
+  coverImage: z.string().url().nullish(),
+});
+// Update 는 전 필드 optional — Create 에서 파생
+const CollectionUpdateSchema = CollectionCreateSchema.partial();
 
 // 모든 라우트에 인증 필수 — 한 줄로 일괄 적용
 router.use(requireAuth);
@@ -56,12 +67,9 @@ router.get("/:id", async (req, res) => {
 });
 
 // 컬렉션 생성 — userId 는 서버가 강제로 주입 (클라이언트 입력 무시)
-router.post("/", async (req, res) => {
+router.post("/", validate(CollectionCreateSchema), async (req, res) => {
   try {
     const { title, theme, description, coverImage } = req.body;
-    if (!title || !theme) {
-      return res.status(400).json({ error: "title 과 theme 은 필수입니다" });
-    }
     const collection = await prisma.collection.create({
       data: {
         title,
@@ -78,15 +86,14 @@ router.post("/", async (req, res) => {
 });
 
 // 컬렉션 수정 — 본인 것만
-router.put("/:id", async (req, res) => {
+router.put("/:id", validate(CollectionUpdateSchema), async (req, res) => {
   try {
     const owned = await findOwnedOrRespond(req, res, req.params.id);
     if (!owned) return;
 
-    const { title, theme, description, coverImage } = req.body;
     const collection = await prisma.collection.update({
       where: { id: owned.id },
-      data: { title, theme, description, coverImage },
+      data: req.body, // partial 스키마 → 명시 전달된 필드만 갱신됨
     });
     res.json(collection);
   } catch (e) {

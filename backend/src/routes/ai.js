@@ -2,12 +2,18 @@ const express = require("express");
 const router = express.Router();
 const prisma = require("../lib/prisma");
 const requireAuth = require("../middleware/requireAuth");
+const { validate, z } = require("../lib/validate");
 
 router.use(requireAuth);
 
 // 사용량 통제 상수
 const DAILY_LIMIT = 5; // 사용자 1명 / 1일 AI 호출 한도
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24h — 최근 분석 결과 캐시 재사용
+
+// ── 입력 스키마 ────────────────────────────────
+const ProfileParamsSchema = z.object({
+  collectionId: z.coerce.number().int().positive(),
+});
 
 function todayKey() {
   // 서버 로컬 시간 기준 YYYY-MM-DD — timezone 혼란 회피
@@ -16,13 +22,14 @@ function todayKey() {
 
 // 컬렉션 별 프로필 생성 (또는 캐시 반환)
 // ?force=true 면 캐시 무시하고 강제 재생성 (한도는 차감)
-router.post("/profile/:collectionId", async (req, res) => {
+router.post("/profile/:collectionId", validate(ProfileParamsSchema, "params"), async (req, res) => {
   try {
     const force = req.query.force === "true";
+    const { collectionId } = req.params; // Zod 가 이미 number 로 coerce
 
     // 1) 소유권 + 데이터 조회 (profile 까지 join — 캐시 판단용)
     const collection = await prisma.collection.findUnique({
-      where: { id: Number(req.params.collectionId) },
+      where: { id: collectionId },
       include: { places: true, profile: true },
     });
     if (!collection || collection.userId !== req.user.id) {
@@ -100,7 +107,7 @@ ${placeList}
     //    (Gemini 호출이 성공한 후에만 차감 — 외부 API 실패는 카운트 안 함)
     const [profile] = await prisma.$transaction([
       prisma.collectionProfile.upsert({
-        where: { collectionId: Number(req.params.collectionId) },
+        where: { collectionId },
         update: {
           themeType: parsed.themeType,
           summary: parsed.summary,
@@ -108,7 +115,7 @@ ${placeList}
           generatedAt: new Date(),
         },
         create: {
-          collectionId: Number(req.params.collectionId),
+          collectionId,
           themeType: parsed.themeType,
           summary: parsed.summary,
           recommendations: JSON.stringify(parsed.recommendations),

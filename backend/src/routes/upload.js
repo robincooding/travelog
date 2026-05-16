@@ -8,6 +8,7 @@ const {
 const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 const crypto = require("node:crypto");
 const requireAuth = require("../middleware/requireAuth");
+const { validate, z } = require("../lib/validate");
 
 router.use(requireAuth);
 
@@ -27,6 +28,18 @@ const MIME_TO_EXT = {
 };
 const PRESIGN_TTL_SEC = 300; // 5분 — presigned URL 유효 기간
 
+// ── 입력 스키마 ────────────────────────────────
+const PresignSchema = z.object({
+  contentType: z.enum(ALLOWED_TYPES, {
+    message: `허용된 이미지 형식이 아니에요 (${ALLOWED_TYPES.join(", ")})`,
+  }),
+});
+
+const DeleteSchema = z.object({
+  // places/ prefix 검증을 Zod 에서 처리 — 잘못된 키로 다른 객체 삭제 시도 차단
+  key: z.string().regex(/^places\//, "허용된 경로가 아니에요").max(200),
+});
+
 /**
  * 1단계: 클라이언트가 업로드할 URL 을 발급받는다.
  * - 백엔드는 권한만 발급, 파일 자체는 클라이언트가 S3 에 직접 PUT
@@ -35,15 +48,9 @@ const PRESIGN_TTL_SEC = 300; // 5분 — presigned URL 유효 기간
  * POST /api/upload/presign  { contentType }
  * → { uploadUrl, key, publicUrl }
  */
-router.post("/presign", async (req, res) => {
+router.post("/presign", validate(PresignSchema), async (req, res) => {
   try {
-    const { contentType } = req.body || {};
-    if (!contentType || !ALLOWED_TYPES.includes(contentType)) {
-      return res.status(400).json({
-        error: `허용된 이미지 형식이 아니에요 (${ALLOWED_TYPES.join(", ")})`,
-      });
-    }
-
+    const { contentType } = req.body;
     const ext = MIME_TO_EXT[contentType];
     const key = `places/${crypto.randomUUID()}${ext}`;
 
@@ -72,15 +79,9 @@ router.post("/presign", async (req, res) => {
  * 이미지 삭제 — presigned 패턴으로 가지 않고 백엔드 경유.
  * (삭제는 가끔 일어나는 작업 + 잘못된 키로 다른 객체 삭제 시도 방지를 위해 백엔드가 통제)
  */
-router.delete("/", async (req, res) => {
+router.delete("/", validate(DeleteSchema), async (req, res) => {
   try {
     const { key } = req.body;
-    if (!key) return res.status(400).json({ error: "key가 없어요" });
-
-    // 안전망: 우리 prefix 가 아닌 키는 거절 (실수로 다른 객체 삭제 방지)
-    if (!key.startsWith("places/")) {
-      return res.status(400).json({ error: "허용된 경로가 아니에요" });
-    }
 
     await s3.send(
       new DeleteObjectCommand({
