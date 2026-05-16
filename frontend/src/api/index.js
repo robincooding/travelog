@@ -47,14 +47,32 @@ export const createPlace = (data) => api.post("/places", data);
 export const updatePlace = (id, data) => api.put(`/places/${id}`, data);
 export const deletePlace = (id) => api.delete(`/places/${id}`);
 
-// ── 이미지 업로드 ──────────────────────────────
-export const uploadImage = (file) => {
-  const formData = new FormData();
-  formData.append("image", file);
-  return api.post("/upload", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
+// ── 이미지 업로드 (S3 presigned URL 패턴) ──────
+// 1) 백엔드에 권한만 요청  2) 클라이언트가 S3 에 직접 PUT
+//    → 백엔드는 파일을 안 들고, AWS 자격증명도 절대 노출되지 않음
+//
+// 호환성을 위해 기존 시그니처 그대로 — 호출부 (CollectionDetail.vue) 는 손대지 않음.
+export async function uploadImage(file) {
+  // 1) presigned PUT URL 발급
+  const { data } = await api.post("/upload/presign", {
+    contentType: file.type,
   });
-};
+
+  // 2) S3 에 직접 PUT — 백엔드 경유하지 않음
+  //    Content-Type 헤더는 서명 시점과 정확히 일치해야 함 (다르면 SignatureDoesNotMatch)
+  const putRes = await fetch(data.uploadUrl, {
+    method: "PUT",
+    body: file,
+    headers: { "Content-Type": file.type },
+  });
+  if (!putRes.ok) {
+    throw new Error(`S3 업로드 실패: ${putRes.status}`);
+  }
+
+  // 사용처가 res.data.url / res.data.key 를 기대 → 같은 형식으로 반환
+  return { data: { url: data.publicUrl, key: data.key } };
+}
+
 export const deleteImage = (key) => api.delete("/upload", { data: { key } });
 
 // ── AI 프로필 ─────────────────────────────────
