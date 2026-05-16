@@ -5,32 +5,47 @@
         <LociLogo class="auth-logo" />
       </RouterLink>
 
-      <h1 class="auth-title">다시 만나서 반가워요</h1>
-      <p class="auth-sub">아카이브를 이어가 봅시다.</p>
+      <h1 class="auth-title">새 비밀번호 설정</h1>
+      <p class="auth-sub">앞으로 이 비밀번호로 로그인하실 수 있어요.</p>
 
-      <form class="auth-form" @submit.prevent="handleSubmit">
+      <!-- 토큰이 없거나 잘못된 경우 -->
+      <div v-if="!token" class="auth-error" role="alert">
+        잘못된 접근이에요. 비밀번호 재설정을 다시 요청해주세요.
+      </div>
+
+      <!-- 성공 후 -->
+      <div v-else-if="done" class="auth-success" role="status">
+        <p class="auth-success-title">✓ 비밀번호가 변경됐어요</p>
+        <p class="auth-success-body">새 비밀번호로 로그인해주세요.</p>
+        <RouterLink to="/login" class="btn-primary auth-submit auth-success-cta">
+          로그인하기
+        </RouterLink>
+      </div>
+
+      <!-- 폼 -->
+      <form v-else class="auth-form" @submit.prevent="handleSubmit">
         <div>
-          <label class="form-label" for="login-email">이메일</label>
+          <label class="form-label" for="reset-pw">새 비밀번호 <span class="form-label-hint">(8자 이상)</span></label>
           <input
-            id="login-email"
-            v-model="email"
-            type="email"
+            id="reset-pw"
+            v-model="password"
+            type="password"
             class="form-input"
-            placeholder="you@example.com"
-            autocomplete="email"
+            autocomplete="new-password"
+            minlength="8"
             required
             :disabled="loading"
           />
         </div>
 
         <div>
-          <label class="form-label" for="login-password">비밀번호</label>
+          <label class="form-label" for="reset-pw-confirm">비밀번호 확인</label>
           <input
-            id="login-password"
-            v-model="password"
+            id="reset-pw-confirm"
+            v-model="passwordConfirm"
             type="password"
             class="form-input"
-            autocomplete="current-password"
+            autocomplete="new-password"
             required
             :disabled="loading"
           />
@@ -45,17 +60,12 @@
           class="btn-primary auth-submit"
           :disabled="loading || !canSubmit"
         >
-          {{ loading ? '로그인 중...' : '로그인' }}
+          {{ loading ? '변경 중...' : '비밀번호 변경' }}
         </button>
-
-        <p class="auth-forgot">
-          <RouterLink to="/forgot-password" class="auth-forgot-link">비밀번호를 잊으셨나요?</RouterLink>
-        </p>
       </form>
 
-      <p class="auth-footer">
-        아직 계정이 없으신가요?
-        <RouterLink to="/register" class="auth-link">회원가입</RouterLink>
+      <p v-if="!done" class="auth-footer">
+        <RouterLink to="/login" class="auth-link">← 로그인으로 돌아가기</RouterLink>
       </p>
     </div>
   </div>
@@ -63,32 +73,38 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { useAuth } from '../stores/auth'
+import { useRoute } from 'vue-router'
+import { resetPassword } from '../api'
 import LociLogo from '../components/LociLogo.vue'
 
 const route = useRoute()
-const router = useRouter()
-const { login } = useAuth()
+const token = computed(() =>
+  typeof route.query.token === 'string' ? route.query.token : '',
+)
 
-const email = ref('')
 const password = ref('')
+const passwordConfirm = ref('')
 const loading = ref(false)
+const done = ref(false)
 const errorMessage = ref('')
 
-const canSubmit = computed(() => email.value && password.value)
+const canSubmit = computed(
+  () => password.value.length >= 8 && password.value === passwordConfirm.value,
+)
 
 async function handleSubmit() {
   errorMessage.value = ''
+  if (password.value !== passwordConfirm.value) {
+    errorMessage.value = '두 비밀번호가 일치하지 않아요'
+    return
+  }
   loading.value = true
   try {
-    await login(email.value, password.value)
-    // 원래 가려던 페이지로 복귀 (라우트 가드가 ?redirect= 쿼리에 저장해두는 패턴)
-    const next = typeof route.query.redirect === 'string' ? route.query.redirect : '/collections'
-    router.replace(next)
+    await resetPassword(token.value, password.value)
+    done.value = true
   } catch (err) {
     errorMessage.value =
-      err.response?.data?.error || '로그인 중 오류가 발생했어요'
+      err.response?.data?.error || '비밀번호 변경 중 오류가 발생했어요'
   } finally {
     loading.value = false
   }
@@ -96,6 +112,7 @@ async function handleSubmit() {
 </script>
 
 <style scoped>
+/* Login / Register / ForgotPassword 와 동일한 카드 레이아웃 */
 .auth-page {
   min-height: 100vh;
   display: flex;
@@ -104,7 +121,6 @@ async function handleSubmit() {
   padding: 3rem 1.25rem;
   background: var(--bg);
 }
-
 .auth-card {
   width: 100%;
   max-width: 420px;
@@ -114,10 +130,8 @@ async function handleSubmit() {
   padding: 2.5rem 2rem 2rem;
   display: flex;
   flex-direction: column;
-  align-items: stretch;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
 }
-
 .auth-logo-link {
   display: flex;
   justify-content: center;
@@ -146,10 +160,14 @@ async function handleSubmit() {
   margin-bottom: 2rem;
 }
 
-.auth-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
+.auth-form { display: flex; flex-direction: column; gap: 1.25rem; }
+
+.form-label-hint {
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--faint);
+  margin-left: 4px;
 }
 
 .auth-error {
@@ -168,20 +186,31 @@ async function handleSubmit() {
   padding: 13px 28px;
   font-size: 14px;
   margin-top: 0.25rem;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
 }
 
-.auth-forgot {
+.auth-success {
   text-align: center;
-  margin-top: 0.25rem;
+  padding: 1.5rem 0;
 }
-.auth-forgot-link {
+.auth-success-title {
+  font-family: var(--font-serif);
+  font-size: 1.1rem;
+  color: var(--ink);
+  margin-bottom: 0.5rem;
+}
+.auth-success-body {
   font-family: var(--font-sans);
-  font-size: 12.5px;
-  color: var(--soft);
-  text-decoration: none;
-  transition: color 0.15s;
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.7;
+  margin-bottom: 1.25rem;
 }
-.auth-forgot-link:hover { color: var(--ink); }
+.auth-success-cta {
+  margin-top: 0;
+}
 
 .auth-footer {
   font-family: var(--font-sans);
@@ -195,7 +224,6 @@ async function handleSubmit() {
   text-decoration: none;
   border-bottom: 1px solid var(--hairline-strong);
   padding-bottom: 1px;
-  margin-left: 4px;
   transition: border-color 0.15s;
 }
 .auth-link:hover { border-color: var(--ink); }

@@ -7,14 +7,33 @@ datasource db {
 }
 
 model User {
-  id           Int          @id @default(autoincrement())
-  email        String       @unique
-  passwordHash String                       // bcrypt hash (평문 비밀번호 절대 저장 X)
+  id           Int                   @id @default(autoincrement())
+  email        String                @unique
+  passwordHash String                                // bcrypt hash (평문 비밀번호 절대 저장 X)
   displayName  String?
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
 
   collections  Collection[]
+  resetTokens  PasswordResetToken[]
+}
+
+/**
+ * 비밀번호 재설정 토큰.
+ * - tokenHash 만 저장 (DB 가 유출돼도 토큰을 그대로 쓸 수 없도록 — 비밀번호 해싱과 같은 원칙)
+ * - 단일 사용 (usedAt 으로 표시) + 만료 (expiresAt) + 감사 추적용 createdAt
+ */
+model PasswordResetToken {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  tokenHash String    @unique   // SHA-256 (토큰 자체가 64자 hex 고엔트로피라 bcrypt 불필요)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model Collection {

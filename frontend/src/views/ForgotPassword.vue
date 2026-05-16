@@ -5,32 +5,19 @@
         <LociLogo class="auth-logo" />
       </RouterLink>
 
-      <h1 class="auth-title">다시 만나서 반가워요</h1>
-      <p class="auth-sub">아카이브를 이어가 봅시다.</p>
+      <h1 class="auth-title">비밀번호를 잊으셨나요?</h1>
+      <p class="auth-sub">가입하신 이메일로 재설정 링크를 보내드려요.</p>
 
-      <form class="auth-form" @submit.prevent="handleSubmit">
+      <form v-if="!sent" class="auth-form" @submit.prevent="handleSubmit">
         <div>
-          <label class="form-label" for="login-email">이메일</label>
+          <label class="form-label" for="forgot-email">이메일</label>
           <input
-            id="login-email"
+            id="forgot-email"
             v-model="email"
             type="email"
             class="form-input"
             placeholder="you@example.com"
             autocomplete="email"
-            required
-            :disabled="loading"
-          />
-        </div>
-
-        <div>
-          <label class="form-label" for="login-password">비밀번호</label>
-          <input
-            id="login-password"
-            v-model="password"
-            type="password"
-            class="form-input"
-            autocomplete="current-password"
             required
             :disabled="loading"
           />
@@ -43,52 +30,46 @@
         <button
           type="submit"
           class="btn-primary auth-submit"
-          :disabled="loading || !canSubmit"
+          :disabled="loading || !email"
         >
-          {{ loading ? '로그인 중...' : '로그인' }}
+          {{ loading ? '발송 중...' : '재설정 링크 받기' }}
         </button>
-
-        <p class="auth-forgot">
-          <RouterLink to="/forgot-password" class="auth-forgot-link">비밀번호를 잊으셨나요?</RouterLink>
-        </p>
       </form>
 
+      <div v-else class="auth-success" role="status">
+        <p class="auth-success-title">✓ 메일을 확인해주세요</p>
+        <p class="auth-success-body">
+          가입된 이메일이면 1시간 동안 유효한 재설정 링크가 도착해요.<br>
+          (학습 환경: 백엔드 콘솔에 출력됩니다)
+        </p>
+      </div>
+
       <p class="auth-footer">
-        아직 계정이 없으신가요?
-        <RouterLink to="/register" class="auth-link">회원가입</RouterLink>
+        <RouterLink to="/login" class="auth-link">← 로그인으로 돌아가기</RouterLink>
       </p>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { useAuth } from '../stores/auth'
+import { ref } from 'vue'
+import { forgotPassword } from '../api'
 import LociLogo from '../components/LociLogo.vue'
 
-const route = useRoute()
-const router = useRouter()
-const { login } = useAuth()
-
 const email = ref('')
-const password = ref('')
 const loading = ref(false)
+const sent = ref(false)
 const errorMessage = ref('')
-
-const canSubmit = computed(() => email.value && password.value)
 
 async function handleSubmit() {
   errorMessage.value = ''
   loading.value = true
   try {
-    await login(email.value, password.value)
-    // 원래 가려던 페이지로 복귀 (라우트 가드가 ?redirect= 쿼리에 저장해두는 패턴)
-    const next = typeof route.query.redirect === 'string' ? route.query.redirect : '/collections'
-    router.replace(next)
+    await forgotPassword(email.value)
+    sent.value = true
   } catch (err) {
     errorMessage.value =
-      err.response?.data?.error || '로그인 중 오류가 발생했어요'
+      err.response?.data?.error || '요청 처리 중 오류가 발생했어요'
   } finally {
     loading.value = false
   }
@@ -96,6 +77,7 @@ async function handleSubmit() {
 </script>
 
 <style scoped>
+/* Login.vue / Register.vue 와 동일한 카드 레이아웃 */
 .auth-page {
   min-height: 100vh;
   display: flex;
@@ -104,7 +86,6 @@ async function handleSubmit() {
   padding: 3rem 1.25rem;
   background: var(--bg);
 }
-
 .auth-card {
   width: 100%;
   max-width: 420px;
@@ -114,10 +95,8 @@ async function handleSubmit() {
   padding: 2.5rem 2rem 2rem;
   display: flex;
   flex-direction: column;
-  align-items: stretch;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
 }
-
 .auth-logo-link {
   display: flex;
   justify-content: center;
@@ -146,11 +125,7 @@ async function handleSubmit() {
   margin-bottom: 2rem;
 }
 
-.auth-form {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
+.auth-form { display: flex; flex-direction: column; gap: 1.25rem; }
 
 .auth-error {
   font-family: var(--font-sans);
@@ -170,18 +145,22 @@ async function handleSubmit() {
   margin-top: 0.25rem;
 }
 
-.auth-forgot {
+.auth-success {
   text-align: center;
-  margin-top: 0.25rem;
+  padding: 1.5rem 0;
 }
-.auth-forgot-link {
+.auth-success-title {
+  font-family: var(--font-serif);
+  font-size: 1.1rem;
+  color: var(--ink);
+  margin-bottom: 0.75rem;
+}
+.auth-success-body {
   font-family: var(--font-sans);
-  font-size: 12.5px;
-  color: var(--soft);
-  text-decoration: none;
-  transition: color 0.15s;
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.7;
 }
-.auth-forgot-link:hover { color: var(--ink); }
 
 .auth-footer {
   font-family: var(--font-sans);
@@ -195,7 +174,6 @@ async function handleSubmit() {
   text-decoration: none;
   border-bottom: 1px solid var(--hairline-strong);
   padding-bottom: 1px;
-  margin-left: 4px;
   transition: border-color 0.15s;
 }
 .auth-link:hover { border-color: var(--ink); }

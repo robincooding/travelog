@@ -1,5 +1,6 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const crypto = require("node:crypto");
 
 /**
  * 인증 관련 공통 유틸 모음.
@@ -55,6 +56,24 @@ function buildCookieOptions() {
   };
 }
 
+// ── 비밀번호 재설정 토큰 ────────────────────────
+// 토큰은 64자 hex (256-bit 엔트로피) — 추측 불가능.
+// DB 에는 SHA-256 hash 만 저장 (DB 유출 시에도 토큰 그대로 못 씀).
+// bcrypt 안 쓰는 이유: 토큰 자체가 이미 고엔트로피라 무차별 대입 위험이 없음 + 검증 시 빠른 lookup 필요.
+const RESET_TOKEN_TTL_MS = 60 * 60 * 1000; // 1 시간
+
+function generateResetToken() {
+  return crypto.randomBytes(32).toString("hex");
+}
+
+function hashResetToken(token) {
+  return crypto.createHash("sha256").update(token).digest("hex");
+}
+
+function resetTokenExpiresAt() {
+  return new Date(Date.now() + RESET_TOKEN_TTL_MS);
+}
+
 module.exports = {
   hashPassword,
   verifyPassword,
@@ -62,4 +81,7 @@ module.exports = {
   verifyToken,
   buildCookieOptions,
   COOKIE_NAME,
+  generateResetToken,
+  hashResetToken,
+  resetTokenExpiresAt,
 };

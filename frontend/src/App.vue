@@ -39,7 +39,9 @@ const router = useRouter()
 const { user, isAuthenticated, logout } = useAuth()
 
 // Landing / 인증 페이지 자체에 nav 가 있거나 디자인상 글로벌 nav 가 겹쳐서 안 보여야 하는 경로
-const hideNav = computed(() => ['/', '/login', '/register'].includes(route.path))
+const hideNav = computed(() =>
+  ['/', '/login', '/register', '/forgot-password', '/reset-password'].includes(route.path),
+)
 
 async function handleLogout() {
   await logout()

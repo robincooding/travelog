@@ -2,6 +2,8 @@ import { createRouter, createWebHistory } from "vue-router";
 import Landing from "./views/Landing.vue";
 import Login from "./views/Login.vue";
 import Register from "./views/Register.vue";
+import ForgotPassword from "./views/ForgotPassword.vue";
+import ResetPassword from "./views/ResetPassword.vue";
 import CollectionList from "./views/CollectionList.vue";
 import CollectionDetail from "./views/CollectionDetail.vue";
 import CollectionForm from "./views/CollectionForm.vue";
@@ -11,6 +13,8 @@ const routes = [
   { path: "/", component: Landing },
   { path: "/login", component: Login, meta: { guestOnly: true } },
   { path: "/register", component: Register, meta: { guestOnly: true } },
+  { path: "/forgot-password", component: ForgotPassword, meta: { guestOnly: true } },
+  { path: "/reset-password", component: ResetPassword, meta: { guestOnly: true } },
   { path: "/collections", component: CollectionList, meta: { requiresAuth: true } },
   { path: "/collections/new", component: CollectionForm, meta: { requiresAuth: true } },
   { path: "/collections/:id", component: CollectionDetail, meta: { requiresAuth: true } },

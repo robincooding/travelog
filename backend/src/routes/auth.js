@@ -7,6 +7,9 @@ const {
   signToken,
   buildCookieOptions,
   COOKIE_NAME,
+  generateResetToken,
+  hashResetToken,
+  resetTokenExpiresAt,
 } = require("../lib/auth");
 const requireAuth = require("../middleware/requireAuth");
 
@@ -102,6 +105,104 @@ router.post("/logout", (req, res) => {
   // clearCookie 도 동일한 옵션(path, sameSite 등)을 줘야 브라우저가 매칭해서 지움
   res.clearCookie(COOKIE_NAME, buildCookieOptions());
   res.json({ ok: true });
+});
+
+// ── 비밀번호 재설정 요청 ───────────────────────
+// POST /api/auth/forgot-password  { email }
+// 이메일 존재 여부를 응답으로 누출하지 않음 — 존재 / 미존재 모두 같은 응답.
+router.post("/forgot-password", async (req, res) => {
+  try {
+    const { email } = req.body || {};
+    if (!email || !EMAIL_RE.test(email)) {
+      return res.status(400).json({ error: "유효한 이메일을 입력해주세요" });
+    }
+
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (user) {
+      // 평문 토큰은 응답으로도, DB 로도 가지 않음. 오직 사용자 이메일(또는 콘솔)로만 전달.
+      const token = generateResetToken();
+      await prisma.passwordResetToken.create({
+        data: {
+          userId: user.id,
+          tokenHash: hashResetToken(token),
+          expiresAt: resetTokenExpiresAt(),
+        },
+      });
+
+      // 학습 단계: 실제 이메일 발송 대신 콘솔에 출력.
+      // 프론트엔드 URL — 운영 환경에선 FRONTEND_URL 같은 env 로 받아야 함.
+      const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+      const resetUrl = `${frontendUrl}/reset-password?token=${token}`;
+      console.log("\n📧 [비밀번호 재설정 링크 — 메일 발송 대체]");
+      console.log(`   사용자: ${user.email}`);
+      console.log(`   링크:   ${resetUrl}`);
+      console.log(`   (1시간 후 만료)\n`);
+    }
+
+    // 사용자가 있건 없건 항상 같은 응답 → 이메일 존재 여부 누출 차단
+    res.json({
+      ok: true,
+      message: "가입된 이메일이면 재설정 링크를 보내드렸어요",
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ── 비밀번호 재설정 실행 ───────────────────────
+// POST /api/auth/reset-password  { token, newPassword }
+router.post("/reset-password", async (req, res) => {
+  try {
+    const { token, newPassword } = req.body || {};
+    if (!token || typeof token !== "string") {
+      return res.status(400).json({ error: "유효한 토큰이 아니에요" });
+    }
+    if (!newPassword || newPassword.length < PASSWORD_MIN) {
+      return res
+        .status(400)
+        .json({ error: `비밀번호는 ${PASSWORD_MIN}자 이상이어야 해요` });
+    }
+
+    const record = await prisma.passwordResetToken.findUnique({
+      where: { tokenHash: hashResetToken(token) },
+      include: { user: true },
+    });
+
+    // 토큰 검증 — 4가지 조건 모두 통과해야 함
+    if (
+      !record ||
+      record.usedAt ||
+      record.expiresAt < new Date() ||
+      !record.user
+    ) {
+      return res
+        .status(400)
+        .json({ error: "유효하지 않거나 만료된 링크에요" });
+    }
+
+    const passwordHash = await hashPassword(newPassword);
+
+    // 1) 비번 갱신  2) 토큰 사용 처리 — 트랜잭션으로 묶어 일관성 보장
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: record.userId },
+        data: { passwordHash },
+      }),
+      prisma.passwordResetToken.update({
+        where: { id: record.id },
+        data: { usedAt: new Date() },
+      }),
+      // 같은 사용자의 다른 미사용 토큰도 모두 무효화 (보안)
+      prisma.passwordResetToken.updateMany({
+        where: { userId: record.userId, usedAt: null, id: { not: record.id } },
+        data: { usedAt: new Date() },
+      }),
+    ]);
+
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // ── 현재 사용자 조회 ───────────────────────────
