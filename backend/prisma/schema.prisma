@@ -16,6 +16,7 @@ model User {
 
   collections  Collection[]
   resetTokens  PasswordResetToken[]
+  aiUsage      AiUsageDaily[]
 }
 
 /**
@@ -23,6 +24,25 @@ model User {
  * - tokenHash 만 저장 (DB 가 유출돼도 토큰을 그대로 쓸 수 없도록 — 비밀번호 해싱과 같은 원칙)
  * - 단일 사용 (usedAt 으로 표시) + 만료 (expiresAt) + 감사 추적용 createdAt
  */
+/**
+ * 사용자별 AI 호출 카운터 (일자 단위 집계).
+ * - row 한 개로 하루치 사용량 표현 → 매 호출마다 row 추가하는 방식보다 효율적
+ * - 일자 비교는 YYYY-MM-DD 문자열로 단순화 (timezone 혼란 회피, 서버 로컬 일자 기준)
+ * - 과거 데이터는 추후 cleanup job 으로 일괄 삭제 가능
+ */
+model AiUsageDaily {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  date      String                   // YYYY-MM-DD
+  count     Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([userId, date])
+}
+
 model PasswordResetToken {
   id        Int       @id @default(autoincrement())
   userId    Int

@@ -5,18 +5,53 @@ const requireAuth = require("../middleware/requireAuth");
 
 router.use(requireAuth);
 
-// 컬렉션 별 프로필 생성
+// 사용량 통제 상수
+const DAILY_LIMIT = 5; // 사용자 1명 / 1일 AI 호출 한도
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24h — 최근 분석 결과 캐시 재사용
+
+function todayKey() {
+  // 서버 로컬 시간 기준 YYYY-MM-DD — timezone 혼란 회피
+  return new Date().toISOString().slice(0, 10);
+}
+
+// 컬렉션 별 프로필 생성 (또는 캐시 반환)
+// ?force=true 면 캐시 무시하고 강제 재생성 (한도는 차감)
 router.post("/profile/:collectionId", async (req, res) => {
   try {
+    const force = req.query.force === "true";
+
+    // 1) 소유권 + 데이터 조회 (profile 까지 join — 캐시 판단용)
     const collection = await prisma.collection.findUnique({
       where: { id: Number(req.params.collectionId) },
-      include: { places: true },
+      include: { places: true, profile: true },
     });
-    // 없거나 다른 사람 컬렉션이면 모두 404 (소유권 정보 노출 방지)
     if (!collection || collection.userId !== req.user.id) {
       return res.status(404).json({ error: "컬렉션을 찾을 수 없어요" });
     }
 
+    // 2) 캐시 분기 — force 가 아니면 24h 이내 결과 그대로 반환 (Gemini 호출 X, 한도 차감 X)
+    if (!force && collection.profile) {
+      const age =
+        Date.now() - new Date(collection.profile.generatedAt).getTime();
+      if (age < CACHE_TTL_MS) {
+        return res.json({ ...collection.profile, cached: true });
+      }
+    }
+
+    // 3) 일일 한도 체크 — 캐시를 못 쓰는 경우에만 차감 대상
+    const date = todayKey();
+    const usage = await prisma.aiUsageDaily.findUnique({
+      where: { userId_date: { userId: req.user.id, date } },
+    });
+    if (usage && usage.count >= DAILY_LIMIT) {
+      return res.status(429).json({
+        error: `오늘 AI 분석 한도(${DAILY_LIMIT}회)를 모두 사용했어요. 내일 다시 시도해주세요.`,
+        limit: DAILY_LIMIT,
+        used: usage.count,
+      });
+    }
+
+    // 4) Gemini 호출
     const placeList = collection.places
       .map(
         (p) =>
@@ -44,6 +79,7 @@ ${placeList}
   "summary": "이 컬렉션의 취향과 성향을 2-3문장으로 요약",
   "recommendations": ["장소명 (도시, 나라)", "장소명 (도시, 나라)", "장소명 (도시, 나라)", "장소명 (도시, 나라)", "장소명 (도시, 나라)"]
 }`;
+
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
       {
@@ -60,22 +96,32 @@ ${placeList}
     const clean = text.replace(/```json|```/g, "").trim();
     const parsed = JSON.parse(clean);
 
-    const profile = await prisma.collectionProfile.upsert({
-      where: { collectionId: Number(req.params.collectionId) },
-      update: {
-        themeType: parsed.themeType,
-        summary: parsed.summary,
-        recommendations: JSON.stringify(parsed.recommendations),
-        generatedAt: new Date(),
-      },
-      create: {
-        collectionId: Number(req.params.collectionId),
-        themeType: parsed.themeType,
-        summary: parsed.summary,
-        recommendations: JSON.stringify(parsed.recommendations),
-      },
-    });
-    res.json(profile);
+    // 5) 프로필 저장 + 카운터 증가 — 트랜잭션으로 일관성 보장
+    //    (Gemini 호출이 성공한 후에만 차감 — 외부 API 실패는 카운트 안 함)
+    const [profile] = await prisma.$transaction([
+      prisma.collectionProfile.upsert({
+        where: { collectionId: Number(req.params.collectionId) },
+        update: {
+          themeType: parsed.themeType,
+          summary: parsed.summary,
+          recommendations: JSON.stringify(parsed.recommendations),
+          generatedAt: new Date(),
+        },
+        create: {
+          collectionId: Number(req.params.collectionId),
+          themeType: parsed.themeType,
+          summary: parsed.summary,
+          recommendations: JSON.stringify(parsed.recommendations),
+        },
+      }),
+      prisma.aiUsageDaily.upsert({
+        where: { userId_date: { userId: req.user.id, date } },
+        update: { count: { increment: 1 } },
+        create: { userId: req.user.id, date, count: 1 },
+      }),
+    ]);
+
+    res.json({ ...profile, cached: false });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
