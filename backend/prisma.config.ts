@@ -1,7 +1,6 @@
 import * as dotenv from "dotenv";
 import * as path from "node:path";
 import { defineConfig } from "prisma/config";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
 
@@ -14,5 +13,5 @@ export default defineConfig({
   datasource: {
     url: process.env.DATABASE_URL!,
   },
-  adapter: () => new PrismaBetterSqlite3({ url: process.env.DATABASE_URL! }),
+  // PostgreSQL 은 Prisma 의 기본 드라이버 사용 — 별도 adapter 불필요
 });

@@ -3,7 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
+  // url 은 prisma.config.ts 의 datasource.url 에서 관리 (Prisma 7 새 권장 방식)
 }
 
 model User {

@@ -23,8 +23,6 @@ build/
 *.local
 
 # Prisma
-backend/data/*.db
-backend/data/*.db-journal
 backend/generated/
 backend/prisma/generated/
 
