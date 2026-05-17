@@ -11,26 +11,26 @@
     <ul v-if="suggestions.length" class="suggestion-list">
       <li
         v-for="s in suggestions"
-        :key="s.place_id"
+        :key="s.placeId"
         class="suggestion-item"
         @click="handleSelect(s)"
       >
-        <p class="suggestion-main">{{ s.structured_formatting?.main_text || s.description }}</p>
-        <p class="suggestion-sub">{{ s.structured_formatting?.secondary_text || '' }}</p>
+        <p class="suggestion-main">{{ s.mainText || s.fullText }}</p>
+        <p class="suggestion-sub">{{ s.secondaryText }}</p>
       </li>
     </ul>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, markRaw } from 'vue'
 
 const emit = defineEmits(['select'])
 const query = ref('')
 const suggestions = ref([])
 let debounceTimer = null
-let autocompleteService = null
-let placesService = null
+// 같은 사용자 세션 안에서 token 을 공유해야 자동완성 + 상세 조회가 1건 청구로 묶임 (비용 절감)
+let sessionToken = null
 
 function loadGoogleMaps() {
   if (window.google?.maps?.importLibrary) return Promise.resolve()
@@ -49,8 +49,7 @@ function loadGoogleMaps() {
 
 async function ensurePlacesLib() {
   await loadGoogleMaps()
-  // Ensure 'places' library is materialized even if not preloaded via libraries= param
-  await window.google.maps.importLibrary('places')
+  return window.google.maps.importLibrary('places')
 }
 
 async function handleInput() {
@@ -60,60 +59,73 @@ async function handleInput() {
     return
   }
   debounceTimer = setTimeout(async () => {
-    await ensurePlacesLib()
-    if (!autocompleteService) {
-      autocompleteService = new window.google.maps.places.AutocompleteService()
+    try {
+      const { AutocompleteSuggestion, AutocompleteSessionToken } = await ensurePlacesLib()
+      if (!sessionToken) sessionToken = new AutocompleteSessionToken()
+
+      const { suggestions: results } =
+        await AutocompleteSuggestion.fetchAutocompleteSuggestions({
+          input: query.value,
+          sessionToken,
+        })
+
+      // SDK 의 PlacePrediction 객체는 내부 getter (placeId 등) 가 minified
+      // 내부 상태에 의존 → Vue 의 reactive proxy 가 감싸면 깨짐.
+      // ① 표시용 텍스트는 plain string 으로 추출
+      // ② toPlace() 호출에 필요한 SDK 객체는 markRaw 로 reactive 변환을 skip
+      // ③ 일반 검색어만 있는 queryPrediction (placePrediction 없음) 은 거름
+      suggestions.value = (results || [])
+        .filter((s) => s.placePrediction)
+        .map((s) => ({
+          placeId: s.placePrediction.placeId,
+          mainText: s.placePrediction.structuredFormat?.mainText?.text || '',
+          secondaryText: s.placePrediction.structuredFormat?.secondaryText?.text || '',
+          fullText: s.placePrediction.text?.text || '',
+          _prediction: markRaw(s.placePrediction),
+        }))
+    } catch (e) {
+      console.error('[PlaceSearch] fetchAutocompleteSuggestions failed:', e)
+      suggestions.value = []
     }
-    autocompleteService.getPlacePredictions(
-      { input: query.value },
-      (predictions, status) => {
-        const STATUS = window.google.maps.places.PlacesServiceStatus
-        if (status === STATUS.OK) {
-          suggestions.value = predictions || []
-        } else if (status === STATUS.ZERO_RESULTS) {
-          suggestions.value = []
-        } else {
-          console.error('[PlaceSearch] getPlacePredictions failed:', status)
-          suggestions.value = []
-        }
-      }
-    )
   }, 300)
 }
 
 async function handleSelect(suggestion) {
-  await ensurePlacesLib()
-  if (!placesService) {
-    const div = document.createElement('div')
-    placesService = new window.google.maps.places.PlacesService(div)
-  }
-  placesService.getDetails(
-    { placeId: suggestion.place_id, fields: ['name', 'geometry', 'formatted_address', 'address_components', 'types'] },
-    (place, status) => {
-      const STATUS = window.google.maps.places.PlacesServiceStatus
-      if (status !== STATUS.OK) {
-        console.error('[PlaceSearch] getDetails failed:', status)
-        return
-      }
-      const addressComponents = place.address_components || []
-      const city = addressComponents.find(c => c.types.includes('locality'))?.long_name || ''
-      const country = addressComponents.find(c => c.types.includes('country'))?.long_name || ''
-      const category = getCategory(place.types || [])
+  try {
+    await ensurePlacesLib()
 
-      emit('select', {
-        name: place.name,
-        googlePlaceId: suggestion.place_id,
-        address: place.formatted_address,
-        city,
-        country,
-        lat: place.geometry.location.lat(),
-        lng: place.geometry.location.lng(),
-        category,
-      })
-      query.value = place.name
-      suggestions.value = []
-    }
-  )
+    // 1) markRaw 로 보관한 원본 PlacePrediction 으로부터 Place 객체 생성
+    //    (sessionToken 이 embedded 되어 있어 자동완성+상세조회가 1건 청구로 묶임)
+    const place = suggestion._prediction.toPlace()
+
+    // 2) 필요한 필드만 명시해서 가져오기 (field mask — 청구 단위 통제)
+    await place.fetchFields({
+      fields: ['displayName', 'formattedAddress', 'location', 'addressComponents', 'types'],
+    })
+
+    // 자동완성 + 상세 조회가 한 세션 묶음으로 청구되었으므로 토큰 재사용 종료
+    sessionToken = null
+
+    const addressComponents = place.addressComponents || []
+    const city = addressComponents.find((c) => c.types.includes('locality'))?.longText || ''
+    const country = addressComponents.find((c) => c.types.includes('country'))?.longText || ''
+    const category = getCategory(place.types || [])
+
+    emit('select', {
+      name: place.displayName,
+      googlePlaceId: place.id,
+      address: place.formattedAddress,
+      city,
+      country,
+      lat: place.location.lat(),
+      lng: place.location.lng(),
+      category,
+    })
+    query.value = place.displayName
+    suggestions.value = []
+  } catch (e) {
+    console.error('[PlaceSearch] place.fetchFields failed:', e)
+  }
 }
 
 function getCategory(types) {
