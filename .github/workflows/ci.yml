@@ -1,0 +1,70 @@
+name: CI
+
+# push 와 PR 마다 자동 실행.
+# main 외 브랜치도 push 시 검증하고 싶다면 branches 행 제거 또는 ['**'] 로.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend-test:
+    name: Backend tests (vitest)
+    runs-on: ubuntu-latest
+
+    # 같은 runner 안에 postgres 컨테이너를 띄움.
+    # 우리 테스트는 localhost:5432 로 붙는데, runner 가 service container 의 포트를
+    # 그대로 노출해주므로 별도 매핑 불필요.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: loci
+          POSTGRES_PASSWORD: loci
+          POSTGRES_DB: loci_test
+        ports:
+          - 5432:5432
+        # 컨테이너가 ready 될 때까지 step 진행 보류 — pg_isready healthcheck
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      # CI 환경에선 postgres service 가 localhost:5432 에 노출
+      DATABASE_URL: postgresql://loci:loci@localhost:5432/loci_test
+      # 실제 운영 시크릿이 아닌 CI 전용 — 학습 단계라 평문, 운영에선 GitHub Secrets 사용
+      JWT_SECRET: ci-test-secret-not-for-production-only
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          # npm 의존성 캐싱 — 다음 실행이 빨라짐
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        # ci 는 lock file 에 정확히 맞춰 설치 (install 보다 엄격, CI 권장)
+        run: npm ci
+
+      - name: Generate Prisma client
+        # 마이그레이션 도구 / 테스트 모두 generated client 필요
+        run: npx prisma generate
+
+      - name: Apply migrations
+        # init 마이그레이션 SQL 을 loci_test 에 적용
+        run: npx prisma migrate deploy
+
+      - name: Run tests
+        run: npm test

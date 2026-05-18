@@ -9,7 +9,14 @@ const { PrismaPg } = require("@prisma/adapter-pg");
  * - PostgreSQL: @prisma/adapter-pg (pg 드라이버 래퍼)
  * - 마이그레이션 / generate 도구는 prisma.config.ts 의 datasource.url 을 사용
  */
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
-const prisma = new PrismaClient({ adapter });
+// 단일 instance 보장 — 테스트 환경 (vitest) 에서 setupFiles 가 매 file 마다
+// 재평가되면서 module cache 무력화 → 여러 instance 가 만들어지면 connection pool 이
+// 분리되어 race condition. globalThis 에 stash 하면 같은 process 내에서는
+// 첫 호출의 instance 를 재사용 (운영 환경에선 어차피 한 번만 평가됨 — 무해).
+const prisma =
+  globalThis.__lociPrisma ??
+  (globalThis.__lociPrisma = new PrismaClient({
+    adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
+  }));
 
 module.exports = prisma;
