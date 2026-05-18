@@ -9,8 +9,9 @@
 
     <form @submit.prevent="handleSubmit" class="form-stack form-block">
       <div>
-        <label class="form-label">컬렉션 이름</label>
+        <label class="form-label" for="collection-title">컬렉션 이름</label>
         <input
+          id="collection-title"
           v-model="form.title"
           type="text"
           required
@@ -20,7 +21,7 @@
       </div>
 
       <div>
-        <label class="form-label">테마</label>
+        <label class="form-label" for="collection-theme">테마</label>
         <div class="chip-group" style="margin-bottom: 0.75rem;">
           <button
             v-for="t in themeOptions"
@@ -32,6 +33,7 @@
           >{{ t }}</button>
         </div>
         <input
+          id="collection-theme"
           v-model="form.theme"
           type="text"
           placeholder="직접 입력"
@@ -40,8 +42,9 @@
       </div>
 
       <div>
-        <label class="form-label">설명 (선택)</label>
+        <label class="form-label" for="collection-description">설명 (선택)</label>
         <textarea
+          id="collection-description"
           v-model="form.description"
           rows="3"
           placeholder="이 컬렉션에 대한 간단한 소개"

@@ -47,3 +47,5 @@ coverage/
 __screenshots__/
 /cypress/videos/
 /cypress/screenshots/
+frontend/test-results/
+frontend/playwright-report/
