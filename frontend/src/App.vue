@@ -9,9 +9,14 @@
         <div class="app-nav-links">
           <template v-if="isAuthenticated">
             <RouterLink to="/collections" class="app-nav-link" active-class="is-active">아카이브</RouterLink>
-            <span class="app-nav-user" :title="user.email">
+            <RouterLink
+              to="/account"
+              class="app-nav-link app-nav-user"
+              :title="user.email"
+              active-class="is-active"
+            >
               {{ user.displayName || user.email }}
-            </span>
+            </RouterLink>
             <button class="app-nav-link app-nav-link-btn" @click="handleLogout">로그아웃</button>
           </template>
           <template v-else>

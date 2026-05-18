@@ -55,6 +55,22 @@ async function logout() {
   }
 }
 
+// 계정 설정 — 응답으로 갱신된 user 를 그대로 store 에 반영
+async function updateDisplayName(displayName) {
+  const { data } = await api.updateDisplayName(displayName);
+  user.value = data.user;
+  return data.user;
+}
+
+async function changePassword(currentPassword, newPassword) {
+  await api.changePassword(currentPassword, newPassword);
+}
+
+async function deleteAccount(password) {
+  await api.deleteAccount(password);
+  user.value = null;
+}
+
 // axios 인터셉터에서 401 만나면 호출 — 만료 / 강제 로그아웃 등 케이스
 function clearOnUnauthorized() {
   user.value = null;
@@ -72,5 +88,8 @@ export function useAuth() {
     login,
     register,
     logout,
+    updateDisplayName,
+    changePassword,
+    deleteAccount,
   };
 }

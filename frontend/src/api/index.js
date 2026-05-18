@@ -35,6 +35,14 @@ export const forgotPassword = (email) =>
 export const resetPassword = (token, newPassword) =>
   api.post("/auth/reset-password", { token, newPassword });
 
+// 계정 설정
+export const updateDisplayName = (displayName) =>
+  api.patch("/auth/me", { displayName });
+export const changePassword = (currentPassword, newPassword) =>
+  api.patch("/auth/password", { currentPassword, newPassword });
+export const deleteAccount = (password) =>
+  api.delete("/auth/me", { data: { password } });
+
 // ── 컬렉션 ─────────────────────────────────────
 // { cursor, limit, search, theme } — 미정의 필드는 자동으로 query 에서 빠짐
 export const getCollections = (params = {}) =>

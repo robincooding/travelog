@@ -7,6 +7,7 @@ import ResetPassword from "./views/ResetPassword.vue";
 import CollectionList from "./views/CollectionList.vue";
 import CollectionDetail from "./views/CollectionDetail.vue";
 import CollectionForm from "./views/CollectionForm.vue";
+import AccountSettings from "./views/AccountSettings.vue";
 import { useAuth } from "./stores/auth";
 
 const routes = [
@@ -19,6 +20,7 @@ const routes = [
   { path: "/collections/new", component: CollectionForm, meta: { requiresAuth: true } },
   { path: "/collections/:id", component: CollectionDetail, meta: { requiresAuth: true } },
   { path: "/collections/:id/edit", component: CollectionForm, meta: { requiresAuth: true } },
+  { path: "/account", component: AccountSettings, meta: { requiresAuth: true } },
 ];
 
 const router = createRouter({ history: createWebHistory(), routes });

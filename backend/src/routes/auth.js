@@ -35,6 +35,20 @@ const ResetPasswordSchema = z.object({
   newPassword: z.string().min(8, "비밀번호는 8자 이상이어야 해요"),
 });
 
+// 계정 설정 ── 세 endpoint 의 입력 스키마
+const UpdateProfileSchema = z.object({
+  displayName: z.string().trim().min(1, "이름을 입력해주세요").max(40),
+});
+
+const ChangePasswordSchema = z.object({
+  currentPassword: z.string().min(1, "현재 비밀번호를 입력해주세요"),
+  newPassword: z.string().min(8, "새 비밀번호는 8자 이상이어야 해요"),
+});
+
+const DeleteAccountSchema = z.object({
+  password: z.string().min(1, "비밀번호를 입력해주세요"),
+});
+
 // 응답에 절대 보내지 않을 필드 (특히 passwordHash)
 function publicUser(user) {
   return {
@@ -212,5 +226,83 @@ router.get("/me", requireAuth, async (req, res) => {
     res.status(500).json({ error: e.message });
   }
 });
+
+// ── 표시 이름 변경 ─────────────────────────────
+// PATCH /api/auth/me  { displayName }
+router.patch(
+  "/me",
+  requireAuth,
+  validate(UpdateProfileSchema),
+  async (req, res) => {
+    try {
+      const user = await prisma.user.update({
+        where: { id: req.user.id },
+        data: { displayName: req.body.displayName },
+      });
+      res.json({ user: publicUser(user) });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  },
+);
+
+// ── 비밀번호 변경 ──────────────────────────────
+// PATCH /api/auth/password  { currentPassword, newPassword }
+// 보안: 현재 비번 재확인 → 세션 탈취된 공격자가 비번 못 바꿈
+router.patch(
+  "/password",
+  requireAuth,
+  validate(ChangePasswordSchema),
+  async (req, res) => {
+    try {
+      const { currentPassword, newPassword } = req.body;
+      const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+      if (!user || !(await verifyPassword(currentPassword, user.passwordHash))) {
+        return res.status(401).json({ error: "현재 비밀번호가 일치하지 않아요" });
+      }
+
+      const passwordHash = await hashPassword(newPassword);
+      // 1) 비번 갱신  2) 다른 미사용 reset 토큰 모두 무효화 (보안 위생)
+      await prisma.$transaction([
+        prisma.user.update({
+          where: { id: user.id },
+          data: { passwordHash },
+        }),
+        prisma.passwordResetToken.updateMany({
+          where: { userId: user.id, usedAt: null },
+          data: { usedAt: new Date() },
+        }),
+      ]);
+
+      res.json({ ok: true });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  },
+);
+
+// ── 회원 탈퇴 ─────────────────────────────────
+// DELETE /api/auth/me  { password }
+// cascade — Collection / Place / Profile / PasswordResetToken / AiUsageDaily 모두 자동 삭제
+// (S3 사진은 별도 작업 — 학습 단계라 생략, 운영에선 cleanup job)
+router.delete(
+  "/me",
+  requireAuth,
+  validate(DeleteAccountSchema),
+  async (req, res) => {
+    try {
+      const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+      if (!user || !(await verifyPassword(req.body.password, user.passwordHash))) {
+        return res.status(401).json({ error: "비밀번호가 일치하지 않아요" });
+      }
+
+      await prisma.user.delete({ where: { id: user.id } });
+      res.clearCookie(COOKIE_NAME, buildCookieOptions());
+      res.json({ ok: true });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  },
+);
 
 module.exports = router;
