@@ -36,7 +36,9 @@ export const resetPassword = (token, newPassword) =>
   api.post("/auth/reset-password", { token, newPassword });
 
 // ── 컬렉션 ─────────────────────────────────────
-export const getCollections = () => api.get("/collections");
+// { cursor, limit, search, theme } — 미정의 필드는 자동으로 query 에서 빠짐
+export const getCollections = (params = {}) =>
+  api.get("/collections", { params });
 export const getCollection = (id) => api.get(`/collections/${id}`);
 export const createCollection = (data) => api.post("/collections", data);
 export const updateCollection = (id, data) =>

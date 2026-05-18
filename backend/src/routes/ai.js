@@ -25,7 +25,7 @@ function todayKey() {
 router.post("/profile/:collectionId", validate(ProfileParamsSchema, "params"), async (req, res) => {
   try {
     const force = req.query.force === "true";
-    const { collectionId } = req.params; // Zod 가 이미 number 로 coerce
+    const { collectionId } = req.validated.params; // Zod 가 이미 number 로 coerce
 
     // 1) 소유권 + 데이터 조회 (profile 까지 join — 캐시 판단용)
     const collection = await prisma.collection.findUnique({

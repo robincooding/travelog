@@ -37,7 +37,8 @@ describe("멀티 테넌시 — 컬렉션", () => {
       .get("/api/collections")
       .set("Cookie", bob.cookies);
     expect(res.status).toBe(200);
-    expect(res.body).toHaveLength(0);
+    expect(res.body.items).toHaveLength(0);
+    expect(res.body.nextCursor).toBeNull();
   });
 
   it("bob 이 alice 컬렉션 GET → 404", async () => {

@@ -25,7 +25,15 @@ function validate(schema, source = "body") {
         issues,
       });
     }
-    req[source] = result.data;
+    // body 는 mutable 이라 그대로 덮어씀 (기존 라우터 호환).
+    // query / params 는 Express 5 에서 getter 라 재할당 silent 무시 →
+    // req.validated 별도 컨테이너에 보관.
+    if (source === "body") {
+      req.body = result.data;
+    } else {
+      req.validated = req.validated || {};
+      req.validated[source] = result.data;
+    }
     next();
   };
 }

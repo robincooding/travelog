@@ -14,6 +14,14 @@ const CollectionCreateSchema = z.object({
 // Update 는 전 필드 optional — Create 에서 파생
 const CollectionUpdateSchema = CollectionCreateSchema.partial();
 
+// 목록 쿼리 — cursor / limit / search / theme
+const CollectionListQuerySchema = z.object({
+  cursor: z.coerce.number().int().positive().optional(),
+  limit: z.coerce.number().int().min(1).max(50).default(20),
+  search: z.string().trim().min(1).max(100).optional(),
+  theme: z.string().trim().min(1).max(50).optional(),
+});
+
 // 모든 라우트에 인증 필수 — 한 줄로 일괄 적용
 router.use(requireAuth);
 
@@ -34,17 +42,44 @@ async function findOwnedOrRespond(req, res, collectionId, options = {}) {
   return collection;
 }
 
-// 전체 컬렉션 목록 — 본인 것만
-router.get("/", async (req, res) => {
+// 컬렉션 목록 — 본인 것만, cursor pagination + search + theme 필터
+// 응답 형식: { items: [...], nextCursor: number | null }
+//
+// 학습 포인트:
+//  - take: limit + 1 로 한 개 더 가져와서 hasMore 판단
+//  - Prisma cursor: { id } — 정렬 키와 무관하게 그 id 시점부터 정렬 순서대로
+//  - skip: 1 — cursor 행 자체는 제외 (없으면 응답에 cursor row 가 중복 등장)
+//  - ILIKE — mode: "insensitive" 로 대소문자 무관 부분 일치
+router.get("/", validate(CollectionListQuerySchema, "query"), async (req, res) => {
   try {
-    const collections = await prisma.collection.findMany({
-      where: { userId: req.user.id },
-      orderBy: { createdAt: "desc" },
+    const { cursor, limit, search, theme } = req.validated.query;
+
+    const where = {
+      userId: req.user.id,
+      ...(search && {
+        OR: [
+          { title: { contains: search, mode: "insensitive" } },
+          { description: { contains: search, mode: "insensitive" } },
+        ],
+      }),
+      ...(theme && { theme }),
+    };
+
+    const items = await prisma.collection.findMany({
+      where,
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      take: limit + 1,
+      ...(cursor && { cursor: { id: cursor }, skip: 1 }),
       include: {
         _count: { select: { places: true } },
       },
     });
-    res.json(collections);
+
+    const hasMore = items.length > limit;
+    const sliced = hasMore ? items.slice(0, limit) : items;
+    const nextCursor = hasMore ? sliced[sliced.length - 1].id : null;
+
+    res.json({ items: sliced, nextCursor });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
