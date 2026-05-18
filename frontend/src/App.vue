@@ -9,6 +9,7 @@
         <div class="app-nav-links">
           <template v-if="isAuthenticated">
             <RouterLink to="/collections" class="app-nav-link" active-class="is-active">아카이브</RouterLink>
+            <RouterLink to="/wishlist" class="app-nav-link" active-class="is-active">가볼 곳</RouterLink>
             <RouterLink
               to="/account"
               class="app-nav-link app-nav-user"

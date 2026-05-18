@@ -21,6 +21,7 @@ beforeEach(async () => {
   // FK 의존 순서 — 자식 → 부모
   await prisma.aiUsageDaily.deleteMany();
   await prisma.passwordResetToken.deleteMany();
+  await prisma.wishlistItem.deleteMany();
   await prisma.collectionProfile.deleteMany();
   await prisma.place.deleteMany();
   await prisma.collection.deleteMany();

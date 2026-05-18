@@ -95,3 +95,8 @@ export const deleteImage = (key) => api.delete("/upload", { data: { key } });
 // ── AI 프로필 ─────────────────────────────────
 export const generateProfile = (collectionId) =>
   api.post(`/ai/profile/${collectionId}`);
+
+// ── 위시리스트 ────────────────────────────────
+export const getWishlist = () => api.get("/wishlist");
+export const addToWishlist = (data) => api.post("/wishlist", data);
+export const removeFromWishlist = (id) => api.delete(`/wishlist/${id}`);

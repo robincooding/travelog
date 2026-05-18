@@ -18,6 +18,7 @@ model User {
   collections  Collection[]
   resetTokens  PasswordResetToken[]
   aiUsage      AiUsageDaily[]
+  wishlist     WishlistItem[]
 }
 
 /**
@@ -70,7 +71,31 @@ model Collection {
   user        User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
   places      Place[]
   profile     CollectionProfile?
+  wishItems   WishlistItem[]
 
+  @@index([userId])
+}
+
+/**
+ * 위시리스트 — "가보고 싶은 곳" 모음.
+ * AI 추천 chip 을 클릭해 추가하거나, 사용자가 직접 입력 가능.
+ * - (userId, name) unique 로 중복 추가 방지
+ * - sourceCollection 은 추천이 어느 컬렉션 분석에서 왔는지 추적 (nullable)
+ *   원본 컬렉션이 삭제되어도 위시는 살아남음 → onDelete: SetNull
+ */
+model WishlistItem {
+  id                 Int      @id @default(autoincrement())
+  userId             Int
+  name               String
+  city               String?
+  country            String?
+  sourceCollectionId Int?
+  createdAt          DateTime @default(now())
+
+  user             User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sourceCollection Collection? @relation(fields: [sourceCollectionId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, name])
   @@index([userId])
 }
 

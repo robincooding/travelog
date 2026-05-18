@@ -8,6 +8,7 @@ import CollectionList from "./views/CollectionList.vue";
 import CollectionDetail from "./views/CollectionDetail.vue";
 import CollectionForm from "./views/CollectionForm.vue";
 import AccountSettings from "./views/AccountSettings.vue";
+import Wishlist from "./views/Wishlist.vue";
 import { useAuth } from "./stores/auth";
 
 const routes = [
@@ -21,6 +22,7 @@ const routes = [
   { path: "/collections/:id", component: CollectionDetail, meta: { requiresAuth: true } },
   { path: "/collections/:id/edit", component: CollectionForm, meta: { requiresAuth: true } },
   { path: "/account", component: AccountSettings, meta: { requiresAuth: true } },
+  { path: "/wishlist", component: Wishlist, meta: { requiresAuth: true } },
 ];
 
 const router = createRouter({ history: createWebHistory(), routes });

@@ -9,6 +9,7 @@ const collectionsRouter = require("./routes/collections");
 const placesRouter = require("./routes/places");
 const aiRouter = require("./routes/ai");
 const uploadRouter = require("./routes/upload");
+const wishlistRouter = require("./routes/wishlist");
 
 /**
  * Express app 생성 — listen 호출은 별도(index.js).
@@ -83,6 +84,7 @@ function createApp({ enableRateLimit = true } = {}) {
   app.use("/api/places", placesRouter);
   app.use("/api/ai", aiRouter);
   app.use("/api/upload", uploadRouter);
+  app.use("/api/wishlist", wishlistRouter);
 
   return app;
 }
